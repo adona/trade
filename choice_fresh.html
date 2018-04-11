@@ -1,0 +1,1204 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>
+	Global Patterns of U.S. Merchandise Trade
+</title><link type="text/css" rel="StyleSheet" href="css/TSE2006.css" /><link type="text/css" rel="StyleSheet" href="css/TableDataPicker.css" /><link type="text/css" rel="StyleSheet" href="css/SlidingPanel.css" />
+    <script language="javascript" src="js/TSEReportOptions.js" type="text/javascript"></script>
+    <script language="javascript" src="js/ReportOptions.js" type="text/javascript"></script>
+    <script language="javascript" src="js/CustomRanges.js" type="text/javascript"></script>
+    <script language="javascript" src="js/CustomColors.js" type="text/javascript"></script>
+    <script language="javascript" src="js/CustomCountry.js" type="text/javascript"></script>
+    <script language="javascript" src="js/TableDataPicker.js" type="text/javascript"></script>
+    <script language="javascript" src="js/SlidingPanel.js" type="text/javascript"></script>
+    <script language="javascript" type="text/javascript">
+        function BodyOnloadStartup() 
+        {
+            initTableDataPicker();
+            UpdateProductDigitLevels(); 
+            DataTabChange(UseThisTab);
+            SetAdditionalDataComputationListAfterReload(UseThisTab);
+            // PA006FL (06-21-2012): Sync changes made to OTII web apps - in the TSE production app Jim added this code:
+            //JR 03.01.11
+            /////////////////////////////////////////////NEW CODE FROM HERE ON //////////////////////////////////////////////////////////////////////////////////////////
+            // PA006FL (06-21-2012): added this if stmt around Jim's new code - getElementById throws an exception in debug mode
+            // when the variable doesn't exist (which it doesn't when running TSEP). So test for existence first:
+            if (typeof TSETSEOnlyAnnualTotalsToList_realNameOf_ === 'undefined') {
+                // do nothing
+            }
+            else {
+                var myToYear = document.getElementById(TSETSEOnlyAnnualTotalsToList_realNameOf_);
+                if (myToYear != undefined) {
+                    //check if we came from MapDisplay.aspx or ChartDisplay.aspx.....if so, i DO NOT want to automatically set the 
+                    //"to" year to the most recent year, otherwise I do
+                    var sWhoCalledMe = document.referrer;
+                    //if we have a referrer
+                    if (sWhoCalledMe.length > 0) {    //and that referrer is not MapDisplay or ChartDisplay
+                        if (sWhoCalledMe.indexOf("Display.aspx") == -1)
+                            myToYear.selectedIndex = 0;
+                    }
+                }
+            }
+            /////////////////////////////////////////////END OF NEW CODE /////////////////////////////////////////////////////////////////////////////////////////////////////
+            if (window.TSEPMapOrChartSelectedColumn != undefined)
+                TSEPMapOrChartSelectedColumn = null;
+            if (bNeedToSetFieldsForPercentTotal) {
+
+                var dropdownlist = document.getElementById(TSEPColumnsAvailableListbox_realNameOf_);
+                if (dropdownlist == null) {
+                    alert('you have got some problems.  The listbox can not be found....');
+                    return null
+                }
+                var numberOfOptions = dropdownlist.options.length;
+                if (numberOfOptions <= 0)
+                    return;
+                //if the last col has the word 'Percent of Total' in it, we remove it.
+                //then add in an option using: TSEPMapOrChartSelectedColumnDescription
+                //which will be the
+
+                var PctOfTotalText = /\(Percent of Total\)/; //regular expression defining the Text  "(Percent of Total)"
+                 
+                if (PctOfTotalText.test(dropdownlist[numberOfOptions - 1].text) );
+                {
+                    if (window.TSEPMapOrChartSelectedColumnDescription != undefined) {
+                        var yearVal = stringTrim(TSEPMapOrChartSelectedColumnDescription.replace("(Percent of Total)", ""));
+                        var optValue = 'Percent of Total|' + yearVal + '|xxx';
+                        removeLastItemDropDownOptions(dropdownlist);
+                        CreateNewListOption(dropdownlist, optValue, TSEPMapOrChartSelectedColumnDescription);
+                        //we need to set the value for the drop down list
+                        //call the right one based on the curtab
+                        document.getElementById(hdnCurrentSelectedAdditionalDataBaseYearDescription_realNameOf_).value = TSEPMapOrChartSelectedColumnDescription;
+                        SetSelecteditemListBoxWithText(document.getElementById(TSEMonthlyAdditionalDataBaseYearList_realNameOf_), yearVal);
+                        SetSelecteditemListBoxWithText(document.getElementById(TSEQuarterlyAdditionalDataBaseYearList_realNameOf_), yearVal);
+                        SetSelecteditemListBoxWithText(document.getElementById(TSEAnnualOnlyAdditionalDataBaseYearList_realNameOf_), yearVal);
+                         GetSelectedColumn();
+                        bReadyToClearErrorText = true;
+                    }
+                }
+            }
+            
+            bReadyToClearErrorText = true;
+            if (window.TSEPMapOrChartSelectedColumnDescription != undefined) {
+
+                var sNameOfList = '';
+
+                if (window.TSETSEOnlyColumnsAvailableListbox_realNameOf_ != undefined) {
+                    sNameOfList = TSETSEOnlyColumnsAvailableListbox_realNameOf_;
+                }
+                else if (window.TSEPColumnsAvailableListbox_realNameOf_ != undefined) {
+                    sNameOfList = TSEPColumnsAvailableListbox_realNameOf_;
+                }
+
+                var ListElem = document.getElementById(sNameOfList);
+                
+                if (ListElem == null)
+                    return;
+                SetSelecteditemListBoxWithText(ListElem, TSEPMapOrChartSelectedColumnDescription);
+                
+                if (window.TSEPColumnsAvailableListbox_realNameOf_ != undefined)
+                    GetSelectedColumn();
+                else if (window.TSETSEOnlyColumnsAvailableListbox_realNameOf_ != undefined)
+                    GetSelectedColumnTSEOnly();                    
+            }
+            if (window.TSETSEOnlyColumnsAvailableListbox_realNameOf_ != undefined) {
+                updateTSEOnlyAvailableColumnsList();
+                var ListElem = document.getElementById(TSETSEOnlyColumnsAvailableListbox_realNameOf_);
+
+                if (ListElem == null)
+                    return;
+                if (window.TSEPMapOrChartSelectedColumnDescription != undefined) {
+                    SetSelecteditemListBoxWithText(ListElem, TSEPMapOrChartSelectedColumnDescription);
+                }
+                GetSelectedColumnTSEOnly();
+            }
+            
+            }
+
+            function stringTrim(strToTrim) 
+            {
+                return (strToTrim.replace(/^\s+|\s+$/g, ''));
+            } 
+    </script>
+</head>
+<body onload="BodyOnloadStartup();">
+    <form name="form1" method="post" action="./TSEOptions.aspx?ReportID=1&amp;Referrer=TSEReports.aspx&amp;DataSource=NTD" id="form1">
+<div>
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwUKMjA3MDc0OTQyOA9kFgICAw9kFh4CAQ9kFgwCAQ8WAh4EVGV4dAXeBTx0YWJsZSBib3JkZXI9MCB3aWR0aD0xMDAlPjx0cj48dGQgc3R5bGU9IndpZHRoOjFweDsiPiA8L3RkPjx0ZCAgdmFsaWduPWJvdHRvbSB3aWR0aD0iMTY4Ij48dGFibGUgd2lkdGg9MTAwJT48dHIgdmFsaWduPW1pZGRsZT48dGQgYWxpZ249bGVmdD48YSAgaWQ9ICJhSG9tZSIgYWx0PSJUcmFkZVN0YXRzIEV4cHJlc3PihKIgSG9tZSIgaHJlZj0iVFNFSG9tZS5hc3B4IiA+PGZvbnQgc2l6ZT0iLTIiPlRyYWRlU3RhdHMgRXhwcmVzc+KEoiBIb21lPC9mb250PjwvYT48L3RkPjwvVFI+PHRyIHZhbGlnbj1taWRkbGU+PHRkIGFsaWduPWxlZnQ+PGEgIGlkPSAiYVNFREhvbWUiIGFsdD0iU3RhdGUgRXhwb3J0IERhdGEiIGhyZWY9IlRTRVJlcG9ydHMuYXNweD9EQVRBPVNFRCIgPjxmb250IHNpemU9Ii0yIj5TdGF0ZSBFeHBvcnQgRGF0YSBIb21lPC9mb250PjwvYT48L3RkPjwvdGQ+PC9UUj48L3RhYmxlPjx0ZCB2YWxpZ249ImJvdHRvbSIgYWxpZ249ImxlZnQiPjxhIGhyZWY9Imh0dHA6Ly93d3cudHJhZGUuZ292Ij48aW1nIHdpZHRoPSIyODAiIGhlaWdodD0iMzEiIGJvcmRlcj0iMCIgYWx0PSJ3d3cudHJhZGUuZ292IiBzcmM9ImltYWdlcy9pdGFfaGVhZGVyLmdpZiIvPjwvYT48L3RkPjx0ZCBhbGlnbj0icmlnaHQiPjxkaXYgY2xhc3M9IkhlYWRlclJvdzEiID5UcmFkZVN0YXRzIEV4cHJlc3PihKIgLSBOYXRpb25hbCBUcmFkZSBEYXRhJm5ic3A7PC9kaXY+PC90ZD48L3RyPjwvdGFibGU+ZAIFDw8WCB4LQ2VsbFBhZGRpbmcCBB4LQ2VsbFNwYWNpbmcCBB4LQm9yZGVyV2lkdGgbAAAAAAAAAAABAAAAHgRfIVNCAqCAGBYCHgVzdHlsZQUWdmVydGljYWwtYWxpZ246bWlkZGxlO2QCBw8WAh8AZWQCCQ8WAh8ABVc8ZGl2IGNsYXNzPSJIZWFkZXJSb3czIiBpZD0iM25kcm93dGV4dCI+R2xvYmFsIFBhdHRlcm5zIG9mIFUuUy4gTWVyY2hhbmRpc2UgVHJhZGU8L2Rpdj5kAgsPDxYEHwBlHgdWaXNpYmxlaGRkAg0PDxYEHwBlHwZoZGQCBw8WAh8GaBYCZg9kFgICAQ9kFgYCBQ8QZGQWAGQCCQ8QZGQWAGQCCw8PFgIeC05hdmlnYXRlVXJsBVhqYXZhc2NyaXB0OiBGaW5kR2VvZ3JhcGh5KCdTdGF0ZU9wdGlvbnMxX3JhZGlvU3RhdGUnLCAnU3RhdGVPcHRpb25zMV9sc3RMaXN0JywgJ1N0YXRlJyk7ZGQCCQ8WAh8GaGQCCw8WAh8GaBYCZg9kFgICAQ9kFggCBQ8QZGQWAGQCBw9kFgICAw8PFgIfBwUeamF2YXNjcmlwdDogRWRpdEN1c3RvbVRyYWRlKCk7ZGQCCw8QZGQWAGQCDQ8PFgIfBwVuamF2YXNjcmlwdDogRmluZEdlb2dyYXBoeSgnVHJhZGVQYXJ0bmVyT3B0aW9uczFfcmFkaW9QYXJ0bmVyVHlwZScsICdUcmFkZVBhcnRuZXJPcHRpb25zMV9sc3RMaXN0JywgJ1BhcnRuZXInKTtkZAINDxYCHwZoZAIPD2QWAmYPZBYCAgEPZBYMAgMPDxYCHwAFB1Byb2R1Y3RkZAIFD2QWAmYPZBYCAgUPEA8WBh4ORGF0YVZhbHVlRmllbGQFB3R5cGVfaWQeDURhdGFUZXh0RmllbGQFC2Rlc2NyaXB0aW9uHgtfIURhdGFCb3VuZGdkEBUDB0V4cG9ydHMHSW1wb3J0cwdCYWxhbmNlFQMGRXhwb3J0BkltcG9ydAdCYWxhbmNlFCsDA2dnZ2RkAgcPFgIfBQUNZGlzcGxheTogbm9uZRYCZg9kFgICBQ8QDxYGHwgFB3R5cGVfaWQfCQULZGVzY3JpcHRpb24fCmdkEBUBHlRvdGFsIEV4cG9ydHMsIEdlbmVyYWwgSW1wb3J0cxUBDFRvdEV4cEdlbkltcBQrAwFnZGQCCQ8WAh8FBQ5kaXNwbGF5OiBibG9jaxYCZg9kFggCBw8PFgIfAAUFTkFJQ1NkZAILDw8WAh8ABQYuVE9UQUxkZAITDw9kFgIeB29uY2xpY2sF3gJQaWNrUHJvZHVjdCgnUHJvZHVjdE9wdGlvbnMxX2xibFNlbGVjdGVkUHJvZHVjdENsYXNzJywgJ1Byb2R1Y3RPcHRpb25zMV9oZG5TZWxlY3RlZFByb2R1Y3RDbGFzcycsICdQcm9kdWN0T3B0aW9uczFfbGJsU2VsZWN0ZWRQcm9kdWN0Q29kZScsICdQcm9kdWN0T3B0aW9uczFfaGRuU2VsZWN0ZWRQcm9kdWN0Q29kZScsICdQcm9kdWN0T3B0aW9uczFfbGJsU2VsZWN0ZWRQcm9kdWN0TmFtZScsICdQcm9kdWN0T3B0aW9uczFfaGRuU2VsZWN0ZWRQcm9kdWN0TmFtZScsICdQcm9kdWN0T3B0aW9uczFfRGlnaXRMZXZlbHNDZWxsJywgJ0ZhbHNlJywgJ05BSUNTJywgJy5UT1RBTCcsICdUcnVlJyk7cmV0dXJuIGZhbHNlO2QCFQ8WAh8FBQ1kaXNwbGF5OiBub25lFgICAw8PZBYCHwsF5QJFZGl0Q3VzdG9tUHJvZHVjdHMoJ1Byb2R1Y3RPcHRpb25zMV9sYmxTZWxlY3RlZFByb2R1Y3RDbGFzcycsICdQcm9kdWN0T3B0aW9uczFfaGRuU2VsZWN0ZWRQcm9kdWN0Q2xhc3MnLCAnUHJvZHVjdE9wdGlvbnMxX2xibFNlbGVjdGVkUHJvZHVjdENvZGUnLCAnUHJvZHVjdE9wdGlvbnMxX2hkblNlbGVjdGVkUHJvZHVjdENvZGUnLCAnUHJvZHVjdE9wdGlvbnMxX2xibFNlbGVjdGVkUHJvZHVjdE5hbWUnLCAnUHJvZHVjdE9wdGlvbnMxX2hkblNlbGVjdGVkUHJvZHVjdE5hbWUnLCAnUHJvZHVjdE9wdGlvbnMxX0RpZ2l0TGV2ZWxzQ2VsbCcsICdGYWxzZScsICdOQUlDUycsICcuVE9UQUwnLCAnVHJ1ZScpO3JldHVybiBmYWxzZTtkAgsPFgIfBQUOZGlzcGxheTogYmxvY2sWAmYPZBYEAgMPDxYCHwAFFVRvdGFsIEFsbCBNZXJjaGFuZGlzZWRkAgcPFgIfBQUOZGlzcGxheTogYmxvY2sWAgIFDxAPFgYfCAUHdHlwZV9pZB8JBQtkZXNjcmlwdGlvbh8KZ2QQFQYBMQEyATMBNAE1ATYVBgZMZXZlbDEGTGV2ZWwyBkxldmVsMwZMZXZlbDQGTGV2ZWw1BkxldmVsNhQrAwZnZ2dnZ2dkZAINDxYCHwUFDWRpc3BsYXk6IG5vbmVkAhMPFgIfBmgWAmYPZBYCAgEPZBYIAgUPZBYCZg9kFgQCBQ8QD2QWAh4Ib25jaGFuZ2UFiQFGcm9tSW50ZXJ2YWxMaXN0Q2hhbmdlZCgnVGFibGVPcHRpb25zMV9sc3RUYWJsZUZyb21JbnRlcnZhbCcsICdUYWJsZU9wdGlvbnMxX2xzdFRhYmxlVG9JbnRlcnZhbCcsICdUYWJsZU9wdGlvbnMxX2xzdFNvcnRCeUNvbHVtbicsIHRydWUpO2QWAGQCCQ8QD2QWAh8MBYcBVG9JbnRlcnZhbExpc3RDaGFuZ2VkKCdUYWJsZU9wdGlvbnMxX2xzdFRhYmxlRnJvbUludGVydmFsJywgJ1RhYmxlT3B0aW9uczFfbHN0VGFibGVUb0ludGVydmFsJywgJ1RhYmxlT3B0aW9uczFfbHN0U29ydEJ5Q29sdW1uJywgdHJ1ZSk7ZBYAZAIHD2QWAmYPZBYGAgcPD2QWAh8LBXREaXNwbGF5V2hpY2hGaWVsZHMoJ1RhYmxlT3B0aW9uczFfY2hrbHN0RGlzcGxheUZpZWxkcycsICdUYWJsZU9wdGlvbnMxX2xzdFNvcnRCeUNvbHVtbicsIHRydWUsIGZhbHNlKTsgcmV0dXJuIGZhbHNlO2QCCQ8PZBYCHwsFdURpc3BsYXlXaGljaEZpZWxkcygnVGFibGVPcHRpb25zMV9jaGtsc3REaXNwbGF5RmllbGRzJywgJ1RhYmxlT3B0aW9uczFfbHN0U29ydEJ5Q29sdW1uJywgZmFsc2UsIGZhbHNlKTsgcmV0dXJuIGZhbHNlO2QCDQ8QZGQWAGQCDQ8QZGQWAGQCEw8QZGQWAGQCFQ8WAh8GaBYCZg9kFgICAQ9kFgICCA9kFgJmD2QWQAIFDxBkZBYAZAIMDxBkZBYAZAIODxBkZBYAZAISDxBkZBYAZAIUDxBkZBYAZAIWDxBkZBYAZAIaDxBkZBYAZAIcDxBkZBYAZAIgDxBkZBYAZAIiDxBkZBYAZAIkDxBkZBYAZAImDxBkZBYAZAIsDxBkZBYAZAIuDxYCHgVWYWx1ZQUEMjAxN2QCMA8WAh8NBQE0ZAI0DxBkZBYAZAI2DxBkZBYAZAI6DxBkZBYAZAI8DxBkZBYAZAI+DxBkZBYAZAJCDxBkZBYAZAJEDxBkZBYAZAJIDxBkZBYAZAJKDxBkZBYAZAJMDxBkZBYAZAJODxBkZBYAZAJSDxBkZBYAZAJUDxBkZBYAZAJYDxBkZBYAZAJaDxBkZBYAZAJcDxBkZBYAZAJeDxBkZBYAZAIXD2QWAmYPZBYCAgEPZBYEAgQPDxYCHwAFDVRhYmxlIERpc3BsYXlkZAIGD2QWAmYPZBYOAgEPEA8WBh8IBQdpbnR2X2NrHwkFC2Rlc2NyaXB0aW9uHwpnZBAVEAQyMDE3BDIwMTYEMjAxNQQyMDE0BDIwMTMEMjAxMgQyMDExBDIwMTAEMjAwOQQyMDA4BDIwMDcEMjAwNgQyMDA1BDIwMDQEMjAwMwQyMDAyFRADNjY5AzY2OAM2NjcDNjY2AzY2NQM2NjQDNjYzAzY2MgM2NjEDNjYwAzY1OQM2NTgDNjU3AzY1NgM2NTUDNjU0FCsDEGdnZ2dnZ2dnZ2dnZ2dnZ2dkZAIDDxAPFgYfCAUHaW50dl9jax8JBQtkZXNjcmlwdGlvbh8KZ2QQFRAEMjAxNwQyMDE2BDIwMTUEMjAxNAQyMDEzBDIwMTIEMjAxMQQyMDEwBDIwMDkEMjAwOAQyMDA3BDIwMDYEMjAwNQQyMDA0BDIwMDMEMjAwMhUQAzY2OQM2NjgDNjY3AzY2NgM2NjUDNjY0AzY2MwM2NjIDNjYxAzY2MAM2NTkDNjU4AzY1NwM2NTYDNjU1AzY1NBQrAxBnZ2dnZ2dnZ2dnZ2dnZ2dnZGQCBw8PFgIfAAUVW0pBTiAyMDE3IC0gREVDIDIwMTddZGQCDw8QDxYGHwgFDU51bVllYXJzVmFsdWUfCQUITnVtWWVhcnMfCmdkEBUQATEBMgEzATQBNQE2ATcBOAE5AjEwAjExAjEyAjEzAjE0AjE1AjE2FRABMQEyATMBNAE1ATYBNwE4ATkCMTACMTECMTICMTMCMTQCMTUCMTYUKwMQZ2dnZ2dnZ2dnZ2dnZ2dnZ2RkAhMPEA8WBh8IBRFDb21wdXRhdGlvbnNWYWx1ZR8JBRBDb21wdXRhdGlvbnNUZXh0HwpnZBAVAg1Eb2xsYXIgQ2hhbmdlDlBlcmNlbnQgQ2hhbmdlFQINRG9sbGFyIENoYW5nZQ5QZXJjZW50IENoYW5nZRQrAwJnZ2RkAhUPEA8WBh8IBQdpbnR2X2NrHwkFC2Rlc2NyaXB0aW9uHwpnZBAVEAQyMDE3BDIwMTYEMjAxNQQyMDE0BDIwMTMEMjAxMgQyMDExBDIwMTAEMjAwOQQyMDA4BDIwMDcEMjAwNgQyMDA1BDIwMDQEMjAwMwQyMDAyFRADNjY5AzY2OAM2NjcDNjY2AzY2NQM2NjQDNjYzAzY2MgM2NjEDNjYwAzY1OQM2NTgDNjU3AzY1NgM2NTUDNjU0FCsDEGdnZ2dnZ2dnZ2dnZ2dnZ2dkZAIXDxAPFgYfCAUHaW50dl9jax8JBQtkZXNjcmlwdGlvbh8KZ2QQFRAEMjAxNwQyMDE2BDIwMTUEMjAxNAQyMDEzBDIwMTIEMjAxMQQyMDEwBDIwMDkEMjAwOAQyMDA3BDIwMDYEMjAwNQQyMDA0BDIwMDMEMjAwMhUQAzY2OQM2NjgDNjY3AzY2NgM2NjUDNjY0AzY2MwM2NjIDNjYxAzY2MAM2NTkDNjU4AzY1NwM2NTYDNjU1AzY1NBQrAxBnZ2dnZ2dnZ2dnZ2dnZ2dnZGQCGQ8WAh8GaGQCGw8WAh8GaBYCZg9kFgICAQ9kFgoCBQ9kFgJmD2QWAgIFDxBkZBYAZAILDxAPZBYCHwwFuAFDaGFuZ2VkQ29sb3JEaXNwbGF5T3B0aW9uKCdDaGFydE9wdGlvbnMxX2xzdERpc3BsYXlTdHlsZScsICdDaGFydE9wdGlvbnMxX2xzdE51bU9mUmFuZ2VzJywgJ0NoYXJ0T3B0aW9uczFfaGRuQ29sb3JzTGlzdEFTUCcsICdDaGFydE9wdGlvbnMxX0RlZmF1bHRDb2xvcnMnLCAnQ2hhcnRPcHRpb25zMV9lZGl0Q29sb3JzJyk7ZBYAZAINDw9kFgIfCwWgAUVkaXRDdXN0b21Db2xvcnMoJ0NoYXJ0T3B0aW9uczFfbHN0RGlzcGxheVN0eWxlJywgJ0NoYXJ0T3B0aW9uczFfbHN0TnVtT2ZSYW5nZXMnLCAnQ2hhcnRPcHRpb25zMV9oZG5Db2xvcnNMaXN0QVNQJywgJ0NoYXJ0T3B0aW9uczFfRGVmYXVsdENvbG9ycycpO3JldHVybiBmYWxzZTtkAhcPEA9kFgIfDAWTAU51bVJhbmdlc0NoYW5nZWQoJ0NoYXJ0T3B0aW9uczFfbHN0RGlzcGxheVN0eWxlJywgJ0NoYXJ0T3B0aW9uczFfbHN0TnVtT2ZSYW5nZXMnLCAnQ2hhcnRPcHRpb25zMV9oZG5Db2xvcnNMaXN0QVNQJywgJ0NoYXJ0T3B0aW9uczFfRGVmYXVsdENvbG9ycycpO2QWAGQCGw9kFgJmD2QWAgIFDxBkZBYAZAIdDxYCHwZoZAIfD2QWAmYPZBYCAgEPZBYWAgUPZBYCZg9kFgQCAw8PFgIfAAULc2hvdzombmJzcDtkZAIHDxAPFgYfCAUHaW50dl9jax8JBQtkZXNjcmlwdGlvbh8KZ2QQFQMEMjAwNwQyMDA2BDIwMDUVAwQyMDA3BDIwMDYEMjAwNRQrAwNnZ2dkZAILDw8WAh8ABRRkaXNwbGF5IHN0eWxlOiZuYnNwO2RkAg8PEA8WBh8IBQNLZXkfCQUFVmFsdWUfCmcWAh8MBa4BQ2hhbmdlZENvbG9yRGlzcGxheU9wdGlvbignTWFwT3B0aW9uczFfbHN0RGlzcGxheVN0eWxlJywgJ01hcE9wdGlvbnMxX2xzdE51bU9mUmFuZ2VzJywgJ01hcE9wdGlvbnMxX2hkbkNvbG9yc0xpc3RBU1AnLCAnTWFwT3B0aW9uczFfRGVmYXVsdENvbG9ycycsICdNYXBPcHRpb25zMV9lZGl0Q29sb3JzJyk7EBUIEWNvbG9yczogYmx1ZSBmYWRlF2NvbG9yczogaGlnaCBjb250cmFzdCAxF2NvbG9yczogaGlnaCBjb250cmFzdCAyFmNvbG9yczogYmx1ZSB0byB5ZWxsb3cTY29sb3JzOiByZWQgdG8gYmx1ZRRjb2xvcnM6IGJsdWUgdG8gY3lhbhFjb2xvcnM6IGdyYXlzY2FsZQ1jdXN0b20gY29sb3JzFQgBMQEyATMBNAE1ATYBNwE5FCsDCGdnZ2dnZ2dnZGQCFQ8PZBYCHwsFmAFFZGl0Q3VzdG9tQ29sb3JzKCdNYXBPcHRpb25zMV9sc3REaXNwbGF5U3R5bGUnLCAnTWFwT3B0aW9uczFfbHN0TnVtT2ZSYW5nZXMnLCAnTWFwT3B0aW9uczFfaGRuQ29sb3JzTGlzdEFTUCcsICdNYXBPcHRpb25zMV9EZWZhdWx0Q29sb3JzJyk7cmV0dXJuIGZhbHNlO2QCGQ8WAh8ABfgEPHNjcmlwdCBsYW5ndWFnZT1qYXZhc2NyaXB0Pgp2YXIgTWFwT3B0aW9uczFfRGVmYXVsdENvbG9ycyA9IG5ldyBBcnJheSgKCSczOyNGRjAwMDAsIzAwRkYwMCwjMDAwMEZGLCNGRkZGMDAsI0ZGMDBGRiwjMDBGRkZGLCNGRkE1MDAsIzAwNjQwMCwjRkZFNjhDLCMxOTE5NzAnLCAKCScyOyNERkVERjgsI0M4REJFQywjQjFDQUUxLCM5QkI5RDYsIzg0QThDQiwjNkQ5N0JGLCM1Nzg2QjQsIzQwNzVBOSwjMjk2NDlFLCMxMzUyOTInLCAKCSczOyNGRjAwMDAsIzAwRkYwMCwjMDAwMEZGLCNGRkZGMDAsI0ZGMDBGRiwjMDBGRkZGLCNGRkE1MDAsIzAwNjQwMCwjRkZFNjhDLCMxOTE5NzAnLCAKCScyOyM1RTRGQTIsIzMyODhCRCwjNjZDMkE1LCNBQkREQTQsI0U2RjU5OCwjRkVFMDhCLCNGREFFNjEsI0Y0NkQ0MywjRDUzRTRGLCNDMjE5NDInLCAKCScxOyNGRkZGMDAsIzAwMDBGRicsIAoJJzE7IzAwMDBGRiwjRkYwMDAwJywgCgknMTsjMDBGRkZGLCMwMDAwRkYnLCAKCScxOyNGRkZGRkYsIzAwMDAwMCcsIAoJJzE7IzAwMDAwMCwjMDAwMDAwJywgCgknMzsjRkYwMDAwLCMwMEZGMDAsIzAwMDBGRiwjRkZGRjAwLCNGRjAwRkYsIzAwRkZGRiwjRkZBNTAwLCMwMDY0MDAsI0ZGRTY4QywjMTkxOTcwJyk7Cjwvc2NyaXB0PgpkAh0PDxYCHwAFHW1hcCAmIGxlZ2VuZCB3aWxsIGhhdmU6Jm5ic3A7ZGQCIQ8QDxYGHwgFA0tleR8JBQVWYWx1ZR8KZxYCHwwFiwFOdW1SYW5nZXNDaGFuZ2VkKCdNYXBPcHRpb25zMV9sc3REaXNwbGF5U3R5bGUnLCAnTWFwT3B0aW9uczFfbHN0TnVtT2ZSYW5nZXMnLCAnTWFwT3B0aW9uczFfaGRuQ29sb3JzTGlzdEFTUCcsICdNYXBPcHRpb25zMV9EZWZhdWx0Q29sb3JzJyk7EBUIATMBNAE1ATYBNwE4ATkCMTAVCAEzATQBNQE2ATcBOAE5AjEwFCsDCGdnZ2dnZ2dnZGQCIw8PFgIfAAUMJm5ic3A7cmFuZ2VzZGQCKw8PFgIfAAUccmFuZ2VzIHRvIGJlIGNvbXB1dGVkOiZuYnNwO2RkAi8PEA9kFgIfCwUwUmVzZXRDdXN0b21SYW5nZXMoJ01hcE9wdGlvbnMxX2xzdE51bU9mUmFuZ2VzJyk7ZGRkAjEPEA9kFgIfCwUYU3VibWl0Rm9yQ3VzdG9tUmFuZ2VzKCk7ZGRkAiUPD2QWAh8LBSVyZXR1cm4gVmFsaWRhdGVUU0VPbmx5SW5wdXRPcHRpb25zKCk7ZAItD2QWBAIBDw8WAh4ISW1hZ2VVcmwFIi4uL2ltYWdlcy9SZXBvcnRPcHRpb25zVFNFX01BUC5naWZkZAIDDxYCHwAFMVBsZWFzZSBzZWxlY3Qgb3B0aW9ucyBvbiB5b3VyIGxlZnQgYW5kIGNsaWNrICJHbyJkGAEFHl9fQ29udHJvbHNSZXF1aXJlUG9zdEJhY2tLZXlfXxYFBTFUaW1lUGVyaW9kT3B0aW9uc19UU0VPbmx5JGNoa1RTRU9ubHlRdWFydGVybHlEYXRhBTJUaW1lUGVyaW9kT3B0aW9uc19UU0VPbmx5JGNoa1RTRU9ubHlBZGRpdGlvbmFsRGF0YQUdTWFwT3B0aW9uczEkcmRBdXRvbWF0aWNSYW5nZXMFGk1hcE9wdGlvbnMxJHJkQ3VzdG9tUmFuZ2VzBRpNYXBPcHRpb25zMSRyZEN1c3RvbVJhbmdlc8leQafg9g5pg1Iu7pyIOXa5veVwB9r8idoELpjmv3Gm" />
+</div>
+
+
+<script language="javascript"   type="text/javascript">
+ var hdnCurrentColsSelectedForTable_realNameOf_ = 'TimePeriodOptions_TSEOnly_hdnSelectedColsForTable';
+ var UseThisTab=''; 
+ var TSETSEOnlyColumnsAvailableListbox_realNameOf_ = 'MapOptions1_lstMapInterval';
+ var TSETSEOnlyAnnualTotalsFromList_realNameOf_='TimePeriodOptions_TSEOnly_lstTSEOnlyAnnualTotalsFrom';
+ var TSETSEOnlyAnnualTotalsToList_realNameOf_='TimePeriodOptions_TSEOnly_lstTSEOnlyAnnualTotalsTo';
+ var TSETSEOnlyShowAdditionalDataCheckBox_realNameOf_='TimePeriodOptions_TSEOnly_chkTSEOnlyAdditionalData';
+ var TSETSEOnlyAdditionalDataComputationList_realNameOf_='TimePeriodOptions_TSEOnly_lstTSEOnlyAdditionalDataComputations';
+ var TSETSEOnlyAdditionalDataFrom_realNameOf_='TimePeriodOptions_TSEOnly_lstTSEOnlyAdditionalDataFrom';
+ var TSETSEOnlyAdditionalDataTo_realNameOf_='TimePeriodOptions_TSEOnly_lstTSEOnlyAdditionalDataTo';
+ var TSETSEOnlyYTDLabel_realNameOf_='TimePeriodOptions_TSEOnly_lblTSEOnlyYTD';
+ var TSETSEOnlyShowYTDCheckBox_realNameOf_='TimePeriodOptions_TSEOnly_chkTSEOnlyQuarterlyData';
+ var TSETSEOnlyYTD_NumYearsList_realNameOf_='TimePeriodOptions_TSEOnly_lstTSEOnlyQuarterlyYTD';
+function SetAsAutoMaticRanges(){ 
+ var VradioAutomaticRanges = document.getElementById('MapOptions1_rdAutomaticRanges');  if (VradioAutomaticRanges != null)     VradioAutomaticRanges.checked = true; }    
+function SubmitForCustomRanges(){ 
+       if (ValidateTSEOnlyInputOptions()==false) { SetAsAutoMaticRanges();    window.status = '';      
+        return false; }    
+   ClearErrorMessageText(); 
+     document.getElementById('MapOptions1_hdnSubmitCustomRanges').value = "true";
+ document.forms[0].submit();          } 
+ var bReadyToClearErrorText = false; 
+ function ClearErrorMessageText(){ 
+   if (bReadyToClearErrorText) document.getElementById('lblMessage').innerHTML= "";
+  } </script>
+<script language="javascript"   type="text/javascript"> var bNeedToSetFieldsForPercentTotal = false;</script>
+<div>
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="A1A9667E" />
+</div>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+	        <tr>
+		        <td>
+                    
+
+<script language="javascript" type="text/javascript">    
+var jr = null;
+var pagename = '';
+
+// -----------------------------------------------------------------------------
+function OpenNewWindow(strPage, type) {
+    pagename = strPage;
+    jr = null;
+    if (type == "HELP") {    
+        jr = window.open(strPage, 'Help', 'fullscreen=no,toolbar=no,status=yes,menubar=no,scrollbars=yes,resizable=yes,directories=no,location=no,width=1200,height=779,left=3,top=5');
+        jr.focus();
+    }
+
+    else if (type == "TABLEONLY") {
+        var sQS = '?COL=' + g_col + '&DESC=' + (g_desc ? 'true' : 'false');
+        strPage += sQS;
+        jr = window.open(strPage, 'ViewDataHTMLonly', 'fullscreen=no,toolbar=no,status=yes,menubar=no,scrollbars=yes,resizable=yes,directories=no,location=no,width=1000,height=555,left=7,top=4');
+        jr.focus();
+    }
+
+    else if (type == "PRINTPREVIEW") {
+        var sQS = '?COL=' + g_col + '&DESC=' + (g_desc ? 'true' : 'false');
+        strPage += sQS;
+        jr = window.open(strPage, 'PrintPreview', 'fullscreen=no,toolbar=no,status=yes,menubar=no,scrollbars=yes,resizable=yes,directories=no,location=no,width=1100,height=855,left=7,top=4');
+        jr.focus();
+    }
+
+    else if (type == "DOWNLOAD") {
+        if (strPage != '') {
+            var sQS = '&COL=' + g_col + '&DESC=' + (g_desc ? 'true' : 'false');
+            strPage += sQS;
+            jr = window.open(strPage, 'Download', 'fullscreen=no,toolbar=no,status=yes,menubar=no,scrollbars=yes,resizable=yes,directories=no,location=no,width=510,height=220,left=79,top=79');
+            jr.focus();
+        }
+    }
+
+    else if (type == "SAVESNAPSHOT") {
+        jr = window.open(strPage, 'SaveSnapShot', 'fullscreen=0,toolbar=0,status=yes,menubar=0,scrollbars=0,resizable=0,directories=0,location=0,width=579,height=220,left=7,top=4');
+        jr.focus();
+    }
+    //taken out...still need to test in IE6, ....functionality worked in IE7, IE8, FF
+    //setTimeout('createFrames()', 10);
+    return;
+}
+
+// -----------------------------------------------------------------------------
+function createFrames() {
+
+    if (jr != null) {
+        if (jr.main) {
+            jr.main.location = pagename;
+            jr.focus();
+        }
+        else {
+            jr.document.location = pagename;
+            jr.focus();
+        }
+    }
+
+    return;
+}
+</script>
+
+<table width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr  class="HeaderRow1">   
+    	<td colspan="4"> <table border=0 width=100%><tr><td style="width:1px;"> </td><td  valign=bottom width="168"><table width=100%><tr valign=middle><td align=left><a  id= "aHome" alt="TradeStats Express™ Home" href="TSEHome.aspx" ><font size="-2">TradeStats Express™ Home</font></a></td></TR><tr valign=middle><td align=left><a  id= "aSEDHome" alt="State Export Data" href="TSEReports.aspx?DATA=SED" ><font size="-2">State Export Data Home</font></a></td></td></TR></table><td valign="bottom" align="left"><a href="http://www.trade.gov"><img width="280" height="31" border="0" alt="www.trade.gov" src="images/ita_header.gif"/></a></td><td align="right"><div class="HeaderRow1" >TradeStats Express™ - National Trade Data&nbsp;</div></td></tr></table></td>
+	</tr>
+
+	<tr  class="HeaderRow1andaHalf">
+		<td colspan="4" align="left" >
+		    <table id="PageHeader1_tblReportLinks" class="PageHeaderButtonsReportList" border="0" style="width:100%;">
+	<tr align="center">
+		<td class="PageHeaderButtonsReportList" align="center" style="text-align:center;"><table cellspacing="0" cellpadding="0" class="PageHeaderButtonsReportList"><TR><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="5" HEIGHT="1" BORDER="0" ALT=" "></TD><TD valign=middle><a href="TSEOptions.aspx?ReportID=1&Referrer=TSEReports.aspx&DataSource=NTD" class="PageHeaderButtonsReportList" ><IMG SRC="images/Toolbox/YouAreHereDot.gif" BORDER="0" ALT="Global Patterns of U.S. Merchandise Trade" TITLE="Global Patterns of U.S. Merchandise Trade"></a></TD><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="4" HEIGHT="1" BORDER="0" ALT="Global Patterns of U.S. Merchandise Trade" TITLE="Global Patterns of U.S. Merchandise Trade"></TD><TD valign=middle align=left><a href="TSEOptions.aspx?ReportID=1&Referrer=TSEReports.aspx&DataSource=NTD" class="PageHeaderButtonsReportList id="1" ><nobr>Global Patterns of U.S. Merchandise Trade</nobr></a></TD><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="5" HEIGHT="1" BORDER="0" ALT=" "></TD></TR></table></td><td class="PageHeaderButtonsReportList"> | </td><td class="PageHeaderButtonsReportList" align="center" style="text-align:center;"><table cellspacing="0" cellpadding="0" class="PageHeaderButtonsReportList"><TR><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="5" HEIGHT="1" BORDER="0" ALT=" "></TD><TD valign=middle><a href="TSEOptions.aspx?ReportID=2&Referrer=TSEReports.aspx&DataSource=NTD" class="PageHeaderButtonsReportList" ><IMG SRC="images/Toolbox/pixel.gif" BORDER="0" ALT="Product Profiles of U.S. Merchandise Trade with a Selected Market" TITLE="Product Profiles of U.S. Merchandise Trade with a Selected Market"></a></TD><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="4" HEIGHT="1" BORDER="0" ALT="Product Profiles of U.S. Merchandise Trade with a Selected Market" TITLE="Product Profiles of U.S. Merchandise Trade with a Selected Market"></TD><TD valign=middle align=left><a href="TSEOptions.aspx?ReportID=2&Referrer=TSEReports.aspx&DataSource=NTD" class="PageHeaderButtonsReportList id="2" ><nobr>Product Profiles of U.S. Merchandise Trade with a Selected Market</nobr></a></TD><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="5" HEIGHT="1" BORDER="0" ALT=" "></TD></TR></table></td>
+	</tr>
+</table>
+		 </td>
+    </tr>		 
+	
+	<tr class="HeaderRow2">
+	    <td style="width:20px;"></td>
+	    <td colspan="3" align="left" >		
+		    <table id="PageHeader1_tblLinks" cellspacing="4" cellpadding="4" border="0" style="border-width:0px;width:100%;vertical-align:middle;">
+	<tr>
+		<td class="PageHeaderButtons" style="text-align:left;"><table cellspacing="0" cellpadding="0"><TR><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="5" HEIGHT="1" BORDER="0" ALT=" "></TD><TD valign=middle><a href="TSEReports.aspx?DATA=NTD" ><IMG SRC="images/Toolbox/iconOtherData.gif" BORDER="0" ALT="Run New National Trade Report" TITLE="Run New National Trade Report"></a></TD><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="4" HEIGHT="1" BORDER="0" ALT="Run New National Trade Report" TITLE="Run New National Trade Report"></TD><TD valign=middle align=left><a href="TSEReports.aspx?DATA=NTD"  id="aNewReport" ><nobr>New National Trade Report</nobr></a></TD><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="5" HEIGHT="1" BORDER="0" ALT=" "></TD></TR></table></td><td class="PageHeaderButtons" style="text-align:right;"><table cellspacing="0" cellpadding="0"><TR><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="5" HEIGHT="1" BORDER="0" ALT=" "></TD><TD valign=middle><a href="javascript:OpenNewWindow('HELP_TSE/helpTSE.htm', 'HELP');" ><IMG SRC="images/Toolbox/iconhelp.gif" BORDER="0" ALT="Help" TITLE="Help"></a></TD><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="1" HEIGHT="1" BORDER="0" ALT="Help" TITLE="Help"></TD><TD valign=middle align=left><a href="javascript:OpenNewWindow('HELP_TSE/helpTSE.htm', 'HELP');"  id="aHelp" ><nobr>Help</nobr></a></TD><TD><IMG SRC="images/Toolbox/pixel.GIF" WIDTH="5" HEIGHT="1" BORDER="0" ALT=" "></TD></TR></table></td>
+	</tr>
+</table>
+		    
+	    </td>   
+    </tr>
+	
+	<tr class="HeaderRow3"> 
+	    <td colspan="4">
+		    <table border="0" width="100%" cellpadding=0>
+		        <tr>
+			        <td align="left"><div class="HeaderRow3" id="3ndrowtext">Global Patterns of U.S. Merchandise Trade</div></td>
+			        <td align="right">
+                        
+                        			    
+			        </td>
+			    </tr>
+		    </table>
+        </td>			
+    </tr>
+
+    <tr>
+        <td colspan="4" class="HeaderBottom">&nbsp;</td>
+    </tr>
+</table>
+
+<div style="visibility:hidden;border:double cyan 2px;color:lime;font-size:10px; font-weight:bold; font-family:verdana;position:absolute;left :3px;top:3px;width :125px;height:26px;"> 
+updated@15:05<br /><a href="UpdateStatus.aspx" target="newWin"> 01.19.2009</a>
+</div>
+		        </td>
+	        </tr>
+	        <tr>
+		        <td>
+		            <img id="Image5" src="images/pixel.gif" style="height:16px;width:1px;border-width:0px;" />
+		        </td>
+	        </tr>	        
+	        <tr>	       
+                <td align="left" valign="top">
+                    <table cellpadding="0" cellspacing="0" border="0">
+	                    <tr>	       
+                            <td>
+		                        <img id="Image6" src="images/pixel.gif" style="height:1px;width:10px;border-width:0px;" />
+                            </td> 
+		                    <td valign="top">
+                                <table class="chartTable" cellpadding="0" cellspacing="0" border="0" width="605px">
+	                                
+	                                	        
+	                                
+	                                	        
+	                                <tr id="ProductRow">
+	<td>
+                                            
+<table class="chartTable" cellpadding="1" cellspacing="1" border="0" width="100%">
+    <tr class="chartHeadingRow">
+        <td>
+            <img id="ProductOptions1_Image1" src="images/pixel.gif" style="height:10px;width:1px;border-width:0px;" />
+            <span id="ProductOptions1_lblHeading" class="chartHeading">Product</span>
+        </td>
+    </tr>
+    <tr id="ProductOptions1_ProductFlowTypeRow">
+		<td>
+            <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td>
+                        <img id="ProductOptions1_Image3" src="images/pixel.gif" style="height:10px;width:1px;border-width:0px;" />
+                        <span id="ProductOptions1_lblProductFlowType" class="chartLabel">flow:</span>
+                    </td>
+                    <td>
+                        <table id="ProductOptions1_radioProductFlowType" border="0">
+			<tr>
+				<td><input id="ProductOptions1_radioProductFlowType_0" type="radio" name="ProductOptions1$radioProductFlowType" value="Export" checked="checked" /><label for="ProductOptions1_radioProductFlowType_0">Exports</label></td><td><input id="ProductOptions1_radioProductFlowType_1" type="radio" name="ProductOptions1$radioProductFlowType" value="Import" /><label for="ProductOptions1_radioProductFlowType_1">Imports</label></td><td><input id="ProductOptions1_radioProductFlowType_2" type="radio" name="ProductOptions1$radioProductFlowType" value="Balance" /><label for="ProductOptions1_radioProductFlowType_2">Balance</label></td>
+			</tr>
+		</table>
+                    </td>
+                </tr>	        
+            </table>        
+        </td>
+	</tr>
+		        
+    <tr id="ProductOptions1_DataFlowTypeRow" style="display: none">
+		<td>
+            <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td >
+                        <img id="ProductOptions1_Image4" src="images/pixel.gif" style="height:10px;width:1px;border-width:0px;" />
+                        <span id="ProductOptions1_lblDataFlowType" class="chartLabel">data flow type:</span>
+                    </td>
+                    <td>
+                        <table id="ProductOptions1_radioDataFlowType" border="0">
+			<tr>
+				<td><input id="ProductOptions1_radioDataFlowType_0" type="radio" name="ProductOptions1$radioDataFlowType" value="TotExpGenImp" checked="checked" /><label for="ProductOptions1_radioDataFlowType_0">Total Exports, General Imports</label></td>
+			</tr>
+		</table>
+                    </td>
+                </tr>	        
+            </table>        
+        </td>
+	</tr>
+		        
+    <tr id="ProductOptions1_ProductSelectionRow1" style="display: block">
+		<td>
+            <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td>
+                        <img id="ProductOptions1_Image5" src="images/pixel.gif" style="height:10px;width:1px;border-width:0px;" />
+                        <span id="ProductOptions1_lblItem" class="chartLabel">item:</span>
+                    </td>
+                    <td>
+                        <img id="ProductOptions1_Image7" src="images/pixel.gif" style="height:10px;width:4px;border-width:0px;" />
+                        <span id="ProductOptions1_lblSelectedProductClass" class="chosenProduct">NAICS</span>
+                        <span id="ProductOptions1_lblSelProdDash" class="chosenProduct"> - </span>
+                        <span id="ProductOptions1_lblSelectedProductCode" class="chosenProduct">.TOTAL</span>
+                        <input type="hidden" name="ProductOptions1$hdnSelectedProductClass" id="ProductOptions1_hdnSelectedProductClass" value="NAICS" />
+                        <input type="hidden" name="ProductOptions1$hdnSelectedProductCode" id="ProductOptions1_hdnSelectedProductCode" value=".TOTAL" />
+                    </td>
+                    <td>
+                        <img id="ProductOptions1_Image8" src="images/pixel.gif" style="height:10px;width:4px;border-width:0px;" />
+			            <input type="submit" name="ProductOptions1$btnChangeProduct" value="Change" onclick="PickProduct(&#39;ProductOptions1_lblSelectedProductClass&#39;, &#39;ProductOptions1_hdnSelectedProductClass&#39;, &#39;ProductOptions1_lblSelectedProductCode&#39;, &#39;ProductOptions1_hdnSelectedProductCode&#39;, &#39;ProductOptions1_lblSelectedProductName&#39;, &#39;ProductOptions1_hdnSelectedProductName&#39;, &#39;ProductOptions1_DigitLevelsCell&#39;, &#39;False&#39;, &#39;NAICS&#39;, &#39;.TOTAL&#39;, &#39;True&#39;);return false;" id="ProductOptions1_btnChangeProduct" name="btnChangeProduct" />
+                    </td>
+                    <td id="ProductOptions1_EditCustomProductsCell" style="display: none">
+                        <img id="ProductOptions1_Image9" src="images/pixel.gif" style="height:10px;width:4px;border-width:0px;" />
+			            <input type="submit" name="ProductOptions1$btnCustomProducts" value="User-Defined Product Groups" onclick="EditCustomProducts(&#39;ProductOptions1_lblSelectedProductClass&#39;, &#39;ProductOptions1_hdnSelectedProductClass&#39;, &#39;ProductOptions1_lblSelectedProductCode&#39;, &#39;ProductOptions1_hdnSelectedProductCode&#39;, &#39;ProductOptions1_lblSelectedProductName&#39;, &#39;ProductOptions1_hdnSelectedProductName&#39;, &#39;ProductOptions1_DigitLevelsCell&#39;, &#39;False&#39;, &#39;NAICS&#39;, &#39;.TOTAL&#39;, &#39;True&#39;);return false;" id="ProductOptions1_btnCustomProducts" name="btnCustomProducts" />
+	
+			            
+                    </td>
+		
+                </tr>	        
+            </table>        
+        </td>
+	</tr>
+		        
+    <tr id="ProductOptions1_ProductSelectionRow2" style="display: block">
+		<td>
+            <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td>
+                        <img id="ProductOptions1_Image2" src="images/pixel.gif" style="height:10px;width:1px;border-width:0px;" />
+                        <span id="ProductOptions1_lblSelectedProductName" class="chosenProduct">Total All Merchandise</span>
+                        <input type="hidden" name="ProductOptions1$hdnSelectedProductName" id="ProductOptions1_hdnSelectedProductName" value="Total All Merchandise" />
+                    </td>
+                    <td id="ProductOptions1_DigitLevelsCell" style="display: block">
+                        <table cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td>
+                                    <img id="ProductOptions1_Image10" src="images/pixel.gif" style="height:1px;width:10px;border-width:0px;" />
+                                </td>
+                                <td>
+                                    <span id="ProductOptions1_lblDigitLevel1">at </span>
+                                </td>
+                                <td>
+                                    <table id="ProductOptions1_radioDigitLevel" border="0">
+			<tr>
+				<td><input id="ProductOptions1_radioDigitLevel_0" type="radio" name="ProductOptions1$radioDigitLevel" value="Level1" /><label for="ProductOptions1_radioDigitLevel_0">1</label></td><td><input id="ProductOptions1_radioDigitLevel_1" type="radio" name="ProductOptions1$radioDigitLevel" value="Level2" /><label for="ProductOptions1_radioDigitLevel_1">2</label></td><td><input id="ProductOptions1_radioDigitLevel_2" type="radio" name="ProductOptions1$radioDigitLevel" value="Level3" checked="checked" /><label for="ProductOptions1_radioDigitLevel_2">3</label></td><td><input id="ProductOptions1_radioDigitLevel_3" type="radio" name="ProductOptions1$radioDigitLevel" value="Level4" /><label for="ProductOptions1_radioDigitLevel_3">4</label></td><td><input id="ProductOptions1_radioDigitLevel_4" type="radio" name="ProductOptions1$radioDigitLevel" value="Level5" /><label for="ProductOptions1_radioDigitLevel_4">5</label></td><td><input id="ProductOptions1_radioDigitLevel_5" type="radio" name="ProductOptions1$radioDigitLevel" value="Level6" /><label for="ProductOptions1_radioDigitLevel_5">6</label></td>
+			</tr>
+		</table>
+                                </td>
+                                <td>
+                                    <span id="ProductOptions1_lblDigitLevel2"> Digit Level</span>
+                                </td>
+                            </tr>	        
+                        </table>        
+                    </td>
+		
+                </tr>	        
+            </table>        
+        </td>
+	</tr>
+		        
+    <tr id="ProductOptions1_ProductDetailSelectionRow" style="display: none">
+		<td>
+            <table cellpadding="0" cellspacing="0" border="0">
+                <tr valign="top">
+                    <td>
+                        <img id="ProductOptions1_Image11" src="images/pixel.gif" style="height:20px;width:1px;border-width:0px;" />
+                        <span id="ProductOptions1_lblProductDetail" class="chartLabel">get:</span>
+                    </td>
+                    <td>
+                        
+                    </td>
+                </tr>	        
+            </table>        
+        </td>
+	</tr>
+		        
+</table>
+
+<script>
+
+function UpdateProductDigitLevels()
+{
+ var classification = document.getElementById( hdnSelectedProductClassID );
+ var code = document.getElementById( hdnSelectedProductCodeID );
+ 
+ //this var is written C# server-side...   // var  bTSEP = true;
+
+if (code==null||classification==null)
+{
+    ShowDigitsRow(false);
+}    
+else
+{
+        var sChosenProductCode = code.value;
+        var sClassValue = classification.value;
+        var bShowDigits = false;
+        if (sChosenProductCode == ".TOTAL" || sChosenProductCode == "MAN" || sChosenProductCode == "NONMAN" || sChosenProductCode == "NDUR" || sChosenProductCode == "DUR") 
+            bShowDigits= true;
+        if (sClassValue == "Custom") 
+            bShowDigits= false;
+        if (bChartReport == "false" || bChartReport == false) 
+            {
+            bShowDigits = false;
+            }
+        if (bShowDigits)
+        {  
+            ShowDigitsRow(true);  
+            var showDigits=new Array(6);
+            var oDigit = new getSelectedDigit(sClassValue);
+            
+            //hardcoded for testing....
+          //  var bTSEP = false;
+            
+            SetDigitsAvailable(showDigits,oDigit,sClassValue, bChartReport, bTSEP, bNTD);
+            var iSelectedDigitLevelOption = oDigit.value;
+             //alert ( 'new  sel value is ' + iSelectedDigitLevelOption );
+             ShowHideIndividualDigitOptions(iSelectedDigitLevelOption, showDigits[0], showDigits[1], showDigits[2], showDigits[3], showDigits[4], showDigits[5]);
+                    }
+        else
+        {
+            ShowHideIndividualDigitOptions( 0,false, false, false, false, false, false); 
+            ShowDigitsRow(false);  
+        }
+	
+}
+
+
+}
+
+
+ 
+
+function  SetDigitsAvailable(showDigits, iSelectedDigitLevelOption,  sClassValue, bChartReport, bTSEP, bNTD)
+{
+    
+            showDigits[0]=false;   showDigits[1]=false;   showDigits[2]=false;
+            showDigits[3]=false;   showDigits[4]=false;   showDigits[5]=false;
+            
+           //this is only for chart reports....
+           //map reports don't bring back 'children' of product groups, just bring back 1 value.
+            if (!bChartReport) return showDigits;
+            if (bTSEP == 'False') bTSEP = false;
+            if (bNTD == 'False') bNTD = false;
+        if (bTSEP) {
+        //we are TSE+
+	    switch(sClassValue)
+		    {
+		     case "HS":
+                showDigits[1]=true;    showDigits[3]=true;   showDigits[5]=true;
+                iSelectedDigitLevelOption.value = 2;
+                if (!bNTD)
+                    { //is SED
+                         showDigits[5]=false;
+                    }
+                break;
+		     case "NAICS":
+                showDigits[1]=true;    showDigits[2]=true;   showDigits[3]=true;    showDigits[4]=true;
+                iSelectedDigitLevelOption.value = 1;
+                if (!bNTD)
+                    { //is SED
+                      showDigits[4]=false;
+                    }                
+                break;
+             case "SITC":
+		        showDigits[0]=true;    showDigits[1]=true;   showDigits[2]=true;
+                if (!bNTD)
+                    { //is SED .. no SED SITC data
+                        showDigits[0]=false;    showDigits[1]=false;   showDigits[2]=false;
+                    }  
+                 break;
+             }
+        }            
+        else {
+              //we are in TSE, not TSE+
+	    switch(sClassValue)
+		    {
+		     case "HS":
+                showDigits[1]=true;    showDigits[3]=true;   
+                iSelectedDigitLevelOption.value = 2;
+                if (!bNTD)
+                    { //is SED
+                         showDigits[1]=false;    showDigits[3]=false;   
+                    }
+                break;
+		     case "NAICS":
+                showDigits[1]=true;    showDigits[2]=true;   showDigits[3]=false;   
+                iSelectedDigitLevelOption.value = 1;
+                if (!bNTD)
+                    { //is SED
+                         showDigits[3]=false;
+                    }                
+                break;
+             case "SITC":
+		        showDigits[0]=true;    showDigits[1]=true;   showDigits[2]=true;
+                if (!bNTD)
+                    { //is SED .. no SED SITC data
+                        showDigits[0]=false;    showDigits[1]=false;   showDigits[2]=false;
+                    }  
+                 break;
+             }
+        }
+        //alert(showDigits);
+       	return showDigits
+ 	
+}
+
+
+
+function ShowDigitsRow ( bVisible)
+{
+//alert ( 'ShowDigitsRow = ' + bVisible + '\n' + radioDigitLevelID);
+    var el;
+    
+    el =  document.getElementById( radioDigitLevelID);
+    if (el != null)    {          el.style.display  = bVisible?'inline':'none';     }
+    
+    el =  document.getElementById( radioDigitLeveLabel1ID);
+    if (el != null)    {          el.style.display  = bVisible?'inline':'none';     }
+    
+    el =  document.getElementById( radioDigitLeveLabel2ID);
+    if (el != null)    {          el.style.display  = bVisible?'inline':'none';     }
+ 
+  
+}
+
+	function ShowHideIndividualDigitOptions ( iSelectedIndex, b1, b2,b3,b4,b5,b6 )
+	{
+   /*alert ('just entered ShowHideIndividualDigitOptions...' + 
+  '\n iSelectedIndex = ' +  iSelectedIndex + 
+  '\n b1 = ' +  b1 + 
+  '\n b2 = ' +  b2 + 
+  '\n b3 = ' +  b3 + 
+  '\n b4 = ' +  b4 + 
+ '\n b5 = ' +  b5 + 
+    '\n b6 = ' +  b6
+  );*/
+  
+     if (b1 == true) { setDigitLevelOption(radioDigitLevelID, "Level1", radioDigitLevelID + "_0", true, iSelectedIndex == 1); }            
+	 else {setDigitLevelOption(radioDigitLevelID, "Level1", radioDigitLevelID + "_0",  false,false);}
+
+	 if (b2 == true) { setDigitLevelOption(radioDigitLevelID, "Level2", radioDigitLevelID + "_1", true, iSelectedIndex == 2); }
+	 else { setDigitLevelOption(radioDigitLevelID, "Level2", radioDigitLevelID + "_1", false, false); }
+
+	 if (b3 == true) { setDigitLevelOption(radioDigitLevelID, "Level3", radioDigitLevelID + "_2", true, iSelectedIndex == 3); }
+	 else { setDigitLevelOption(radioDigitLevelID, "Level3", radioDigitLevelID + "_2", false, false); }
+
+	 if (b4 == true) { setDigitLevelOption(radioDigitLevelID, "Level4", radioDigitLevelID + "_3", true, iSelectedIndex == 4); }
+	 else { setDigitLevelOption(radioDigitLevelID, "Level4", radioDigitLevelID + "_3", false, false); }
+
+	 if (b5 == true) { setDigitLevelOption(radioDigitLevelID, "Level5", radioDigitLevelID + "_4", true, iSelectedIndex == 5); }
+	 else { setDigitLevelOption(radioDigitLevelID, "Level5", radioDigitLevelID + "_4", false, false); }
+
+	 if (b6 == true) { setDigitLevelOption(radioDigitLevelID, "Level6", radioDigitLevelID + "_5", true, iSelectedIndex == 6); }
+	 else { setDigitLevelOption(radioDigitLevelID, "Level6", radioDigitLevelID + "_5", false, false); }              
+	 
+	 	
+	}
+	
+	
+	function setDigitLevelOption(sIDofRadioOptions, optionValue, labelfor,  bVisible, bChecked)
+{
+ //alert (' in setDigitLevelOption \n' + 
+ //'sIDofRadioOptions = ' + sIDofRadioOptions + ' \n' +
+ //'optionValue = ' + optionValue + ' \n' +
+ //'labelfor = ' + labelfor + ' \n' +
+ //'bVisible = ' + bVisible + ' \n' +
+ //'bChecked = ' + bChecked + ' \n');
+
+    var cntlRadio = document.getElementById(sIDofRadioOptions);
+    var iOption = null;
+    if (cntlRadio != null)
+    {
+        var opts = cntlRadio.getElementsByTagName("input");
+        for (var i=0; i<opts.length; i++)
+        {  if ( iOption == null)
+	            {
+	                // if ( i==sIDofRadioOptions)
+	                if (bChecked)
+	            {
+	            opts[i].checked= true;
+	            } 
+	                if (opts[i].value == optionValue)
+	                {
+    	                iOption =  opts[i];
+    	            }
+    	        }
+        }
+    }
+    if (iOption!=null&&cntlRadio!=null)
+    {
+      iOption.style.display  = bVisible?'inline':'none';
+ 
+       var allLabels = document.getElementsByTagName("label");
+       
+             for (i = 0; i < allLabels.length; i++) 
+                {
+                    var theLabel = allLabels[i];
+              //      alert ( 
+             //       "theLabel.htmlFor=*" + theLabel.htmlFor + "*\n" +
+            //        "labelfor             =*" + labelfor + "*\n" );
+                    
+                    if ( theLabel.htmlFor==labelfor)
+                    {
+                    theLabel.style.display  = bVisible?'inline':'none';
+                     return null;
+                    }
+                }
+    
+    }
+}
+
+
+
+function getSelectedDigit(strClass)
+{   
+    if(strClass=='HS')
+        this.value = 2;    
+      else
+        this.value = 1;
+}
+
+ 
+
+</script>
+		                                </td>
+</tr>
+
+	                                <tr id="ProductSpacerRow">
+	<td>
+		                                    <img id="Image2" src="images/pixel.gif" style="height:10px;width:1px;border-width:0px;" />
+		                                </td>
+</tr>
+	        
+	                                	        
+	                                	
+	        	                    <tr id="TSEOnlyTableRow">
+	<td>
+                                           
+<table class="chartTable" cellpadding="1" cellspacing="1" border="0" width="100%">
+    <tr class="chartHeadingRow">
+        <td>
+            <img id="TimePeriodOptions_TSEOnly_Image1" src="images/pixel.gif" style="height:10px;width:1px;border-width:0px;" />
+            <span id="TimePeriodOptions_TSEOnly_lblHeading" class="chartHeading">Table Display</span>
+        </td>
+    </tr>
+    <tr id="TimePeriodOptions_TSEOnly_tdTimePickerRow" valign="top">
+		<td>
+            <!-- TSEonly DIV-->
+            <div class="datacontentarea" id="divTSEOnly">
+                <table border="0" class="TimePeriodText" width="97%">
+                    <tr><td colspan="2" align="left" class="TimePeriodSectionHeader">ANNUAL TOTALS</td></tr>
+                </table>
+                <div class="TimePeriodSections">
+                    <table border="0" class="TimePeriodText" width="97%">
+                        <tr>
+                            <td><img src="images/pixel.gif" width="13" /></td>
+                            <td>
+                                <table>
+                                    <tr>
+                                        <td> Display Data for:</td>
+                                        <td><select name="TimePeriodOptions_TSEOnly$lstTSEOnlyAnnualTotalsFrom" id="TimePeriodOptions_TSEOnly_lstTSEOnlyAnnualTotalsFrom">
+			<option value="669">2017</option>
+			<option value="668">2016</option>
+			<option value="667">2015</option>
+			<option selected="selected" value="666">2014</option>
+			<option value="665">2013</option>
+			<option value="664">2012</option>
+			<option value="663">2011</option>
+			<option value="662">2010</option>
+			<option value="661">2009</option>
+			<option value="660">2008</option>
+			<option value="659">2007</option>
+			<option value="658">2006</option>
+			<option value="657">2005</option>
+			<option value="656">2004</option>
+			<option value="655">2003</option>
+			<option value="654">2002</option>
+
+		</select> </td>
+                                        <td>to:</td>
+                                        <td><select name="TimePeriodOptions_TSEOnly$lstTSEOnlyAnnualTotalsTo" id="TimePeriodOptions_TSEOnly_lstTSEOnlyAnnualTotalsTo">
+			<option value="669">2017</option>
+			<option selected="selected" value="668">2016</option>
+			<option value="667">2015</option>
+			<option value="666">2014</option>
+			<option value="665">2013</option>
+			<option value="664">2012</option>
+			<option value="663">2011</option>
+			<option value="662">2010</option>
+			<option value="661">2009</option>
+			<option value="660">2008</option>
+			<option value="659">2007</option>
+			<option value="658">2006</option>
+			<option value="657">2005</option>
+			<option value="656">2004</option>
+			<option value="655">2003</option>
+			<option value="654">2002</option>
+
+		</select> </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr><td colspan="2" align="left"><img src="images/pixel.gif" height="4" /></td></tr>
+                    </table>   
+                </div> 
+                <div id="tseOnlyTableOptionsSlidingPanel" style="overflow: hidden;">
+                    <table border="0" class="TimePeriodText" width="97%">
+                        <tr><td colspan="2" align="left" class="TimePeriodSectionHeader">QUARTERLY DATA</td></tr>
+                    </table>
+                    <div class="TimePeriodSections">
+                        <table border="0" class="TimePeriodText" width="97%">
+                            <tr valign="middle">
+                                <td valign="middle"><img src="images/pixel.gif" width="13" /></td>
+                                <td valign="middle" align="left">
+                                    <input id="TimePeriodOptions_TSEOnly_chkTSEOnlyQuarterlyData" type="checkbox" name="TimePeriodOptions_TSEOnly$chkTSEOnlyQuarterlyData" /><label for="TimePeriodOptions_TSEOnly_chkTSEOnlyQuarterlyData">Year To Date (Quarter)</label>
+                                    <span id="TimePeriodOptions_TSEOnly_lblTSEOnlyYTD" class="TimePeriodYTDDesc">[JAN 2017 - DEC 2017]</span>
+                                    <span id="TimePeriodOptions_TSEOnly_Label1" class="TimePeriodYTDDesc"></span>
+                                    <input type="hidden" name="TimePeriodOptions_TSEOnly$hdnQuarterlyCurrYear" id="TimePeriodOptions_TSEOnly_hdnQuarterlyCurrYear" value="2017" />
+                                    <input type="hidden" name="TimePeriodOptions_TSEOnly$hdnQuarterlyCurrQuarter" id="TimePeriodOptions_TSEOnly_hdnQuarterlyCurrQuarter" value="4" />
+                                </td>
+                                <td valign="middle">for most recent: <select name="TimePeriodOptions_TSEOnly$lstTSEOnlyQuarterlyYTD" id="TimePeriodOptions_TSEOnly_lstTSEOnlyQuarterlyYTD">
+			<option selected="selected" value="1">1</option>
+			<option value="2">2</option>
+			<option value="3">3</option>
+			<option value="4">4</option>
+			<option value="5">5</option>
+			<option value="6">6</option>
+			<option value="7">7</option>
+			<option value="8">8</option>
+			<option value="9">9</option>
+			<option value="10">10</option>
+			<option value="11">11</option>
+			<option value="12">12</option>
+			<option value="13">13</option>
+			<option value="14">14</option>
+			<option value="15">15</option>
+			<option value="16">16</option>
+
+		</select>
+                                    years<br /><br />
+                                </td>
+                                <td colspan="2" align="left"><img src="images/pixel.gif" height="10" /></td>
+                            </tr>
+                        </table>   
+                    </div>        
+                    <table border="0" class="TimePeriodText" width="97%">
+                        <tr><td colspan="2" align="left" class="TimePeriodSectionHeader">ADDITIONAL DATA</td></tr>
+                    </table>
+                    <div class="TimePeriodSections">
+                        <table border="0" class="TimePeriodText" width="97%">
+                            <tr>
+                                <td><img src="images/pixel.gif" width="13" /></td>
+                                <td>
+                                    <table>
+                                        <tr>
+                                            <td><input id="TimePeriodOptions_TSEOnly_chkTSEOnlyAdditionalData" type="checkbox" name="TimePeriodOptions_TSEOnly$chkTSEOnlyAdditionalData" /><label for="TimePeriodOptions_TSEOnly_chkTSEOnlyAdditionalData">Compute </label></td>
+                                            <td><select name="TimePeriodOptions_TSEOnly$lstTSEOnlyAdditionalDataComputations" id="TimePeriodOptions_TSEOnly_lstTSEOnlyAdditionalDataComputations">
+			<option selected="selected" value="Dollar Change">Dollar Change</option>
+			<option value="Percent Change">Percent Change</option>
+
+		</select> </td>
+                                            <td>from:</td>
+                                            <td><select name="TimePeriodOptions_TSEOnly$lstTSEOnlyAdditionalDataFrom" id="TimePeriodOptions_TSEOnly_lstTSEOnlyAdditionalDataFrom">
+			<option value="669">2017</option>
+			<option value="668">2016</option>
+			<option value="667">2015</option>
+			<option value="666">2014</option>
+			<option selected="selected" value="665">2013</option>
+			<option value="664">2012</option>
+			<option value="663">2011</option>
+			<option value="662">2010</option>
+			<option value="661">2009</option>
+			<option value="660">2008</option>
+			<option value="659">2007</option>
+			<option value="658">2006</option>
+			<option value="657">2005</option>
+			<option value="656">2004</option>
+			<option value="655">2003</option>
+			<option value="654">2002</option>
+
+		</select> </td>
+                                            <td>to:</td>
+                                            <td><select name="TimePeriodOptions_TSEOnly$lstTSEOnlyAdditionalDataTo" id="TimePeriodOptions_TSEOnly_lstTSEOnlyAdditionalDataTo">
+			<option selected="selected" value="669">2017</option>
+			<option value="668">2016</option>
+			<option value="667">2015</option>
+			<option value="666">2014</option>
+			<option value="665">2013</option>
+			<option value="664">2012</option>
+			<option value="663">2011</option>
+			<option value="662">2010</option>
+			<option value="661">2009</option>
+			<option value="660">2008</option>
+			<option value="659">2007</option>
+			<option value="658">2006</option>
+			<option value="657">2005</option>
+			<option value="656">2004</option>
+			<option value="655">2003</option>
+			<option value="654">2002</option>
+
+		</select> </td>
+                                        </tr>
+                                    </table>
+                                 </td>
+                             </tr>
+                            <tr><td colspan="2" align="left"><img src="images/pixel.gif" height="4" /></td></tr>
+                        </table>            
+                    </div>
+                    <input type="hidden" name="TimePeriodOptions_TSEOnly$hdnSelectedColsForTable" id="TimePeriodOptions_TSEOnly_hdnSelectedColsForTable" />
+                </div>
+            </div>
+            <!-- end of divTSEonly DIV-->
+            <!-- end of tabs section-->
+        </td>
+	</tr>
+		        
+    <tr align="center">
+        <td>
+            <img src="images/pixel.gif" width="16px" height="16px" alt="-" title='collapse' id="tseOnlyTableOptionsSlidingControl" 
+                class="sliderExpandedUp" onclick="slideTSEOnlyTableOptions();return false;" />
+        </td>
+    </tr>
+</table>
+
+		                                </td>
+</tr>
+	
+	                                	        
+	                                
+	                                	        
+	                                <tr id="MapRow">
+	<td>
+                                            
+<table class="chartTable" cellpadding="1" cellspacing="1" border="0" width="100%">
+    <tr class="chartHeadingRow">
+        <td>
+            <img id="MapOptions1_Image3" src="images/pixel.gif" style="height:10px;width:1px;border-width:0px;" />
+            <span id="MapOptions1_Label9" class="chartHeading">Map Display</span>
+        </td>
+    </tr>
+    <tr id="MapOptions1_MapIntervalRow">
+		<td>
+            <table cellpadding="0" cellspacing="0" border="0">
+                <tr valign="middle">
+                    <td>
+                        <img id="MapOptions1_Image4" src="images/pixel.gif" style="height:30px;width:3px;border-width:0px;" />
+			        </td>
+                    <td>
+                        <span id="MapOptions1_lblMapInterval" class="chartLabel">show:&nbsp;</span>
+			        </td>
+                    <td>
+                        <img id="MapOptions1_Image7" src="images/pixel.gif" style="height:30px;width:5px;border-width:0px;" />
+			        </td>
+                    <td>
+                        <select name="MapOptions1$lstMapInterval" id="MapOptions1_lstMapInterval">
+			<option selected="selected" value="2007">2007</option>
+			<option value="2006">2006</option>
+			<option value="2005">2005</option>
+
+		</select>
+			        </td>
+                </tr>
+            </table>
+        </td>
+	</tr>
+	
+    <tr>
+        <td>
+            <div id="mapOptionsSlidingPanel" style="overflow: hidden;">
+                <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr id="MapOptions1_RegionalizeMap" style="display: none">
+		<td>
+                            <table cellpadding="0" cellspacing="0" border="0">
+                                <tr valign="middle">
+                                    <td>
+                                        <img id="MapOptions1_Image2" src="images/pixel.gif" style="height:30px;width:3px;border-width:0px;" />
+			                        </td>
+                                    <td>
+                                        <span id="MapOptions1_lblRegionalize" class="chartLabel">display region:</span>
+			                        </td>
+                                    <td>
+                                        <img id="MapOptions1_Image8" src="images/pixel.gif" style="height:30px;width:5px;border-width:0px;" />
+			                        </td>
+                                    <td>
+                                        <select name="MapOptions1$lstRegionalize" id="MapOptions1_lstRegionalize">
+
+		</select>
+			                        </td>
+                                </tr>
+                            </table>
+                        </td>
+	</tr>
+	
+                    <tr>
+                        <td>
+                            <table cellpadding="0" cellspacing="0" border="0">
+                                <tr valign="middle">
+                                    <td>
+                                        <img id="MapOptions1_Image5" src="images/pixel.gif" style="height:30px;width:3px;border-width:0px;" />
+			                        </td>
+                                    <td>
+                                        <span id="MapOptions1_lblDisplayStyle" class="chartLabel">display style:&nbsp;</span>
+			                        </td>
+                                    <td>
+                                        <img id="MapOptions1_Image9" src="images/pixel.gif" style="height:30px;width:5px;border-width:0px;" />
+			                        </td>
+                                    <td>
+                                        <select name="MapOptions1$lstDisplayStyle" id="MapOptions1_lstDisplayStyle" onchange="ChangedColorDisplayOption(&#39;MapOptions1_lstDisplayStyle&#39;, &#39;MapOptions1_lstNumOfRanges&#39;, &#39;MapOptions1_hdnColorsListASP&#39;, &#39;MapOptions1_DefaultColors&#39;, &#39;MapOptions1_editColors&#39;);">
+		<option selected="selected" value="1">colors: blue fade</option>
+		<option value="2">colors: high contrast 1</option>
+		<option value="3">colors: high contrast 2</option>
+		<option value="4">colors: blue to yellow</option>
+		<option value="5">colors: red to blue</option>
+		<option value="6">colors: blue to cyan</option>
+		<option value="7">colors: grayscale</option>
+		<option value="9">custom colors</option>
+
+	</select>
+                                    </td>
+                                    <td>
+                                        <img id="MapOptions1_Image10" src="images/pixel.gif" style="height:30px;width:3px;border-width:0px;" />
+			                        </td>
+                                    <td>  	
+			                            <div id="colorsample" style="text-align:center;"></div>
+			                        </td>
+                                    <td>
+                                        <img id="MapOptions1_Image11" src="images/pixel.gif" style="height:30px;width:3px;border-width:0px;" />
+			                        </td>
+			                        <td>
+			                            <span id="divEditColorsButton" class="editColorsButton"></span>
+					                    <input type="submit" name="MapOptions1$editColors" value="edit..." onclick="EditCustomColors(&#39;MapOptions1_lstDisplayStyle&#39;, &#39;MapOptions1_lstNumOfRanges&#39;, &#39;MapOptions1_hdnColorsListASP&#39;, &#39;MapOptions1_DefaultColors&#39;);return false;" id="MapOptions1_editColors" class="editColorsButton" name="editColors" />
+			                        </td>
+                                </tr>
+                            </table>
+                            <input type="hidden" name="MapOptions1$hdnColorsListASP" id="MapOptions1_hdnColorsListASP" value="#DFEDF8,#C8DBEC,#B1CAE1,#9BB9D6,#84A8CB,#6D97BF,#5786B4,#4075A9,#29649E,#135292" />
+                            <script language=javascript>
+var MapOptions1_DefaultColors = new Array(
+	'3;#FF0000,#00FF00,#0000FF,#FFFF00,#FF00FF,#00FFFF,#FFA500,#006400,#FFE68C,#191970', 
+	'2;#DFEDF8,#C8DBEC,#B1CAE1,#9BB9D6,#84A8CB,#6D97BF,#5786B4,#4075A9,#29649E,#135292', 
+	'3;#FF0000,#00FF00,#0000FF,#FFFF00,#FF00FF,#00FFFF,#FFA500,#006400,#FFE68C,#191970', 
+	'2;#5E4FA2,#3288BD,#66C2A5,#ABDDA4,#E6F598,#FEE08B,#FDAE61,#F46D43,#D53E4F,#C21942', 
+	'1;#FFFF00,#0000FF', 
+	'1;#0000FF,#FF0000', 
+	'1;#00FFFF,#0000FF', 
+	'1;#FFFFFF,#000000', 
+	'1;#000000,#000000', 
+	'3;#FF0000,#00FF00,#0000FF,#FFFF00,#FF00FF,#00FFFF,#FFA500,#006400,#FFE68C,#191970');
+</script>
+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table class="chartTable" cellpadding="0" cellspacing="0" border="0">
+                                <tr valign="middle">
+                                    <td>
+                                        <img id="MapOptions1_Image6" src="images/pixel.gif" style="height:30px;width:3px;border-width:0px;" />
+			                        </td>
+                                    <td>
+                                        <span id="MapOptions1_lblNumOfRanges" class="chartLabel">map & legend will have:&nbsp;</span>
+                                    </td>
+                                    <td>
+                                        <img id="MapOptions1_Image12" src="images/pixel.gif" style="height:30px;width:5px;border-width:0px;" />
+			                        </td>
+                                    <td>
+                                        <select name="MapOptions1$lstNumOfRanges" id="MapOptions1_lstNumOfRanges" onchange="NumRangesChanged(&#39;MapOptions1_lstDisplayStyle&#39;, &#39;MapOptions1_lstNumOfRanges&#39;, &#39;MapOptions1_hdnColorsListASP&#39;, &#39;MapOptions1_DefaultColors&#39;);">
+		<option value="3">3</option>
+		<option value="4">4</option>
+		<option selected="selected" value="5">5</option>
+		<option value="6">6</option>
+		<option value="7">7</option>
+		<option value="8">8</option>
+		<option value="9">9</option>
+		<option value="10">10</option>
+
+	</select>
+                                        <span id="MapOptions1_lblNumOfRanges2" class="chartLabel">&nbsp;ranges</span>
+                                    </td>
+                                    <td rowspan="2" valign="top" align="right">
+                                        <input type="hidden" name="hdnCustomRangeMin1" id="hdnCustomRangeMin1" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMax1" id="hdnCustomRangeMax1" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMin2" id="hdnCustomRangeMin2" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMax2" id="hdnCustomRangeMax2" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMin3" id="hdnCustomRangeMin3" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMax3" id="hdnCustomRangeMax3" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMin4" id="hdnCustomRangeMin4" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMax4" id="hdnCustomRangeMax4" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMin5" id="hdnCustomRangeMin5" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMax5" id="hdnCustomRangeMax5" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMin6" id="hdnCustomRangeMin6" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMax6" id="hdnCustomRangeMax6" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMin7" id="hdnCustomRangeMin7" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMax7" id="hdnCustomRangeMax7" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMin8" id="hdnCustomRangeMin8" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMax8" id="hdnCustomRangeMax8" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMin9" id="hdnCustomRangeMin9" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMax9" id="hdnCustomRangeMax9" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMin10" id="hdnCustomRangeMin10" value=""/>
+                                        <input type="hidden" name="hdnCustomRangeMax10" id="hdnCustomRangeMax10" value=""/>	
+                                        <input type="hidden" name="MapOptions1$hdnSubmitCustomRanges" id="MapOptions1_hdnSubmitCustomRanges" />
+                                        <span id="spanCustomRanges"></span>
+                                    </td>
+                                </tr>
+                                <tr valign="middle">
+                                    <td>
+                                        <img id="MapOptions1_Image1" src="images/pixel.gif" style="height:30px;width:3px;border-width:0px;" />
+			                        </td>
+                                    <td>
+                                        <span id="MapOptions1_lblRangeComputation" class="chartLabel">ranges to be computed:&nbsp;</span>
+                                    </td>
+                                    <td>
+                                        <img id="MapOptions1_Image13" src="images/pixel.gif" style="height:30px;width:3px;border-width:0px;" />
+			                        </td>
+                                    <td>
+                                        <input id="MapOptions1_rdAutomaticRanges" type="radio" name="MapOptions1$MapRanges" value="1" checked="checked" onclick="ResetCustomRanges(&#39;MapOptions1_lstNumOfRanges&#39;);" /><label for="rdAutomaticRanges">Automatically</label><br />
+                                        <input id="MapOptions1_rdCustomRanges" type="radio" name="MapOptions1$MapRanges" value="0" onclick="SubmitForCustomRanges();" /><label for="custom">Custom...</label>
+			                        </td>
+                                </tr>
+		                    </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </td>
+    </tr>
+    <tr align="center">
+        <td>
+            <img src="images/pixel.gif" width="16px" height="16px" alt="-" title='collapse' id="mapOptionsSlidingControl" 
+                class="sliderExpandedUp" onclick="slideMapOptions();return false;" />
+        </td>
+    </tr>
+</table>
+
+		                                </td>
+</tr>
+
+	                                <tr id="MapSpacerRow">
+	<td>
+		                                    <img id="Image3" src="images/pixel.gif" style="height:1px;width:1px;border-width:0px;" />
+		                                </td>
+</tr>
+	        
+	                                <tr>
+		                                <td>
+                                            <table class="chartTable" cellpadding="1" cellspacing="1" border="0" width="100%">
+	                                            <tr class="chartHeadingRow">
+		                                            <td align="right">
+		                                                <img id="Image11" src="images/pixel.gif" style="height:10px;width:1px;border-width:0px;" />
+                                                        <input type="submit" name="btnGo" value="Go" onclick="return ValidateTSEOnlyInputOptions();" id="btnGo" style="width:100px;" />
+		                                            </td>
+                                                </tr>
+	                                            <tr>
+		                                            <td>
+		                                                <img id="Image16" src="images/pixel.gif" style="height:20px;width:1px;border-width:0px;" />
+                                                        <span id="lblMessage" class="ErrorMessage"></span>
+		                                            </td>
+                                                </tr>
+                                            </table>
+		                                </td>
+	                                </tr>
+                                </table>
+		                    </td>
+                            <td>
+		                        <img id="Image7" src="images/pixel.gif" style="height:1px;width:10px;border-width:0px;" />
+                            </td> 
+                            <td valign="top">
+                                
+<div id="InfoArea">
+    <img id="InputOptionsInfoSection1_InfoImage" src="images/ReportOptionsTSE_MAP.gif" style="border-width:0px;" /> 
+    <br /><br />
+    <div class="OptionsPageInstruction">Please select options on your left and click "Go"</div>
+</div>
+                            </td> 
+	                    </tr>	        
+                    </table>
+		        </td>
+	        </tr>
+	        <tr>
+		        <td>
+                    
+<script language="JAVASCRIPT" type="text/javascript" src="js/headersfooters.js"></script>
+<div style="VISIBILITY:visible;Width:100%">
+	<img height="15" alt="" src="images/pixel.gif" width="1" border="0"><br />
+	<table border="0" cellpadding="0" cellspacing="0" width="100%">
+		<tr class="H3rdRowColor">
+			<td colspan="3" class="presentedBy" align="center"><img src="Images/pixel.gif" border="0" height="3" width="1" alt="spacer">
+			Presented by the Office of Trade and Economic Analysis (OTEA), Industry and Analysis, International Trade Administration, U.S. Department of Commerce.
+			</td>
+		</tr>
+		<tr class="H2ndRowColor">
+			<TD align="left" width ="10%"></TD>
+			<TD valign="middle" align="center" width="75%" class="Sndlevelseparate">
+				<DIV class="NonPrintable" align="center"><IMG src="Images/pixel.gif" border="0" height="3" width="1" alt="spacer"><BR>
+					<SCRIPT language="JAVASCRIPT" type="TEXT/JAVASCRIPT"><!--
+					    mailtoWithCC('Contact OTEA');//--></SCRIPT>
+					&nbsp;&nbsp;|&nbsp;&nbsp;
+<A class="footerA" target="top" href="http://www.trade.gov/mas/ian/referenceinfo/index.asp">More Data Resources</A>
+		&nbsp;&nbsp;|&nbsp;&nbsp; 
+<A class="footerA" target="top" href="http://trade.gov/privacy.asp">Privacy Statement</A> 
+        &nbsp;&nbsp;|&nbsp;&nbsp; 
+<A class="footerA" target="top" href="http://trade.gov/endorse.asp">Endorsement Disclaimer</A>
+					<BR>
+					<IMG src="Images/pixel.gif" border="0" height="3" width="1" alt=" "><br>
+<A class="footerA" target="top" href="http://www.doc.gov">U.S. Department of Commerce</A>
+        &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; 
+<A class="footerA" target="top" href="http://www.trade.gov">International Trade Administration</A>
+					<BR>
+					<IMG src="Images/pixel.gif" border="0" height="7" width="1" alt=" "></DIV>
+			</TD>
+			<TD  align="center" width="15%" ><DIV class="NonPrintable"><img src="images/footer_TSE_logo.gif" /></DIV></TD>
+		</tr>
+		<tr class="HRowColor">
+			<TD colspan="3" valign="top" align="center">
+			<table width="100%" border="0" cellpadding="0" cellpadding="0">
+			<td class="iewarning"><IMG src="Images/pixel.gif" border="0" height="7" width="1" alt=" "><BR>
+			This site is best viewed in 1024x768 or higher monitor resolution.  Developed with Internet Explorer v7.0 (and higher) and Firefox v3 (and higher) in mind.
+				<br>
+				<IMG src="Images/pixel.gif" border="0" height="8" width="1" alt=" "><br></td>
+			 <TD align="center" class="currentdatatime"> 4/11/2018  4:54:41 AM  </TD>
+			</table>
+			</TD> 
+		</tr>
+	</table>
+</div>
+		        </td>
+	        </tr>
+        </table>
+    
+<SCRIPT LANGUAGE=JAVASCRIPT TYPE=text/javascript>
+var radioDigitLevelID = 'ProductOptions1_radioDigitLevel';
+var radioDigitLeveLabel1ID = 'ProductOptions1_lblDigitLevel1';
+var radioDigitLeveLabel2ID = 'ProductOptions1_lblDigitLevel2';
+var hdnSelectedProductClassID = 'ProductOptions1_hdnSelectedProductClass';
+var hdnSelectedProductCodeID = 'ProductOptions1_hdnSelectedProductCode';
+var bChartReport = 'false';
+var bNTD = 'True';
+var bTSEP = 'False';
+var TSEProductFlowType_realNameOf_ = 'ProductOptions1_radioProductFlowType';
+</script><SCRIPT LANGUAGE=JAVASCRIPT TYPE=text/javascript>
+var radioPartnerTypeID = 'TradePartnerOptions1_radioPartnerType';
+var lstPartnerListID = 'TradePartnerOptions1_lstList';
+var hdnSelectedPartnerValueID = 'TradePartnerOptions1_hdnSelectedPartnerValue';
+var hdnSelectedPartnerTextID = 'TradePartnerOptions1_hdnSelectedPartnerText';
+</script><script language=javascript>SetSortIntervalList('TableOptions1_lstTableFromInterval', 'TableOptions1_lstTableToInterval', 'TableOptions1_lstSortByColumn', true);</script><script language=javascript>WireDisplayFieldsList('TableOptions1_chklstDisplayFields', 'TableOptions1_lstSortByColumn', false);SetSortDisplayFieldsList('TableOptions1_chklstDisplayFields', 'TableOptions1_lstSortByColumn', false);</script><script language=javascript>initTableOptions();</script><script language=javascript>initTSEPTableOptions();</script><script language=javascript>initTSEOnlyTableOptions();</script><script language=javascript>UpdateColorSwatch('ChartOptions1_lstDisplayStyle', 'ChartOptions1_lstNumOfRanges', 'ChartOptions1_hdnColorsListASP', 'ChartOptions1_DefaultColors');</script><script language=javascript>initChartOptions();</script><script language=javascript>UpdateColorSwatch('MapOptions1_lstDisplayStyle', 'MapOptions1_lstNumOfRanges', 'MapOptions1_hdnColorsListASP', 'MapOptions1_DefaultColors');</script><script language=javascript>initMapOptions();</script></form>
+</body>
+</html>
