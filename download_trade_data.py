@@ -247,34 +247,36 @@ if __name__ == "__main__":
 
     if(len(sys.argv) == 1 or (len(sys.argv)==2 and sys.argv[1] == "help")):
         # Show the usage
-        print("Usage: ")
+        print()
+        print("Analyze US trade data from the http://tse.export.gov/ website.")
+        print("For more information see: https://github.com/adona/trade")
+        print()
+        print("Usage:")
         print("\tpython3 " + sys.argv[0] + " [-f filename] [-p product_list] product_class year flow datadir cookie")
         print()
-        print("Description:")
-        print("\t" + sys.argv[0][:-3] + " downloads a year's worth of US trade data from the http://tse.export.gov/ website. ") 
-        print("\tProduct_class specifies which standard trade products classification system to use: NAICS, HS, or SITC.")
-        print("\tFlow specifies which direction of trade to download: Import or Export. ")
-        print("\tDatadir specifies which directory to save the downloaded data in. The data will be saved " + 
-            "in both JSON and CSV format in the directory <datadir>/<product_class>/" )
-        print("\tCookie provides a valid cookie to use to download the data.")
+        print("Required parameters:")
+        print("\tproduct_class - specifies which standard trade products classification system to use: NAICS, HS, or SITC.")
+        print("\tflow - specifies the direction of trade: Import or Export.")
+        print("\tdatadir - specifies the destination directory for the downloaded data. The data will be saved in both JSON and CSV formats." )
+        print("\tcookie - a valid cookie manually generated using the 'preliminary setup' instructions below.")
         print()
-        print("\tNOTE: To generate a valid cookie: ")
+        print("Optional parameters:")
+        print("\t-f filename - filename (without extension) under which to store the downloaded data. The default is <product_class>_<year>_<flow> (e.g. SITC_2017_Import.json/csv)")
+        print("\t-p product_list - file specifying which product categories to download. By default, the script expects a file named <datadir>/<product_class>.txt.")
+        print()
+        print("Preliminary setup:")
+        print("\t Before running the script, you will need to manually generate a valid cookie:")
         print("\t\t 1. Begin capturing HTTP traffic using Wireshark or program of choice.")
         print("\t\t 2. In an incognito window, load http://tse.export.gov/")
-        print("\t\t 3. Navigate to: National Trade Data -> Global Patterns of U.S. Merchandise Trade")
-        print("\t\t 4. Extract the cookie from the captured HTTP request")
+        print("\t\t 3. Navigate to: National Trade Data -> Global Patterns of U.S. Merchandise Trade.")
+        print("\t\t 4. Extract the cookie from the captured HTTP request.")
         print()
-        print("Options:")
-        print("\t-f filename")
-        print("\t\t Specify under what filename to save the downloaded data. The default is <product_class>_<year>_<flow>.json/csv.")
-        print("\t-p product_list")
-        print("\t\t Specify the location of the product_list file. The default is <datadir>/<product_class>/<product_class>.txt")
+        print("Example Uses:")
+        print("\tpython3 " + sys.argv[0] + " -f ~/data/trade/SITC_2017_Export_small -p ~/data/trade/SITC_small.txt SITC 2017 Export ~/data/trade [cookie]")
+        print("\tpython3 " + sys.argv[0] + " SITC 2017 Export ~/data/trade [cookie]")
+        print("\tpython3 " + sys.argv[0] + " help")
         print()
-        print("Example:")
-        print("\tpython3 " + sys.argv[0] + " SITC 2017 Export ~/data/trade 2yiv2sjj2keob0x54tmhy315")
-        print("\tpython3 " + sys.argv[0] + " -f ~/data/trade/SITC/SITC_small -p ~/data/trade/SITC/SITC_small.txt SITC 2017 Export ~/data/trade 2yiv2sjj2keob0x54tmhy315")
         print()
-    
     else: 
         try: 
             # Read parameters from command line
@@ -298,9 +300,9 @@ if __name__ == "__main__":
             cookie = params[4]
 
             if(filename == ""):
-                filename = datadir + "/" + pclass + "/" + pclass + "_" + str(year) + "_" + flow
+                filename = datadir + "/" + pclass + "_" + str(year) + "_" + flow
             if(product_list == ""):
-                product_list = datadir + "/" + pclass + "/" + pclass + ".txt"
+                product_list = datadir + "/" + pclass + ".txt"
         
 
             # print("Product class: " + pclass)
