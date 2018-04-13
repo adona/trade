@@ -13,7 +13,10 @@ The website provides trade data:
 Use the *download\_trade\_data.py* script to bulk download one year of trade data, for all countries, for a list of product categories. 
 
 #### Preliminary setup
-Before running the script, you will need to manually generate a valid cookie:
+To install all required pacakages run: 
+pip3 install -r requirements.txt
+
+Before running the script you will also need to manually generate a valid cookie:
 
 1. Begin capturing HTTP traffic using [Wireshark](https://www.wireshark.org/) or program of choice.
 2. In an **incognito** window, load [http://tse.export.gov/](http://tse.export.gov/)
