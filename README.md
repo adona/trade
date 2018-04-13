@@ -18,31 +18,29 @@ Before running the script, you will need to manually generate a valid cookie:
 1. Begin capturing HTTP traffic using [Wireshark](https://www.wireshark.org/) or program of choice.
 2. In an **incognito** window, load [http://tse.export.gov/](http://tse.export.gov/)
 3. Navigate to: National Trade Data -> Global Patterns of U.S. Merchandise Trade
-4. Extract the cookie from the captured HTTP request
+4. Extract the cookie from the captured HTTP request.
+(NOTE: The cookie should look something like: 'ASP.NET_SessionId=20pjd3a31dqjh05rytoziouv'.
+You will only need the part after the =sign, in this example: 20pjd3a31dqjh05rytoziouv)
+
 
 #### Usage:
-python3 download\_trade\_data.py [-f filename] [-p product_list] product_class year flow datadir cookie
+python3 download_trade_data.py [-h] [-f FILENAME] [-v]                              products year {Import,Export} datadir cookie
+##### Required arguments:
+* **products** - file specifying: 1) a trade products classification system to use (NAICS, HS, or SITC - see details [here](http://tse.export.gov/tse/TSEProductPicker.aspx?lblProductClassID=ProductOptions1_lblSelectedProductClass&hdnProductClassID=ProductOptions1_hdnSelectedProductClass&lblProductCodeID=ProductOptions1_lblSelectedProductCode&hdnProductCodeID=ProductOptions1_hdnSelectedProductCode&lblProductNameID=ProductOptions1_lblSelectedProductName&hdnProductNameID=ProductOptions1_hdnSelectedProductName&cellDigitLevel=ProductOptions1_DigitLevelsCell&ChartReport=False&ClassSystemValue=NAICS&ProductCode=.TOTAL&NTD=True)), and 2) a list of product classes under that system for which to download data. Example files with complete lists of product classes for each classification system can be found here: https://goo.gl/c9m5H9
+* **year** - year to download data for (between 2002-2017)
+* **{Import,Export}** - direction of trade: Import or Export
+* **datadir** - destination directory for downloaded data
+* **cookie** - a manually-generated valid cookie (see instructions above)
 
-##### Required parameters:
-- *product\_class* specifies which standard trade products classification system to use: NAICS, HS, or SITC (see details [here](http://tse.export.gov/tse/TSEProductPicker.aspx?lblProductClassID=ProductOptions1_lblSelectedProductClass&hdnProductClassID=ProductOptions1_hdnSelectedProductClass&lblProductCodeID=ProductOptions1_lblSelectedProductCode&hdnProductCodeID=ProductOptions1_hdnSelectedProductCode&lblProductNameID=ProductOptions1_lblSelectedProductName&hdnProductNameID=ProductOptions1_hdnSelectedProductName&cellDigitLevel=ProductOptions1_DigitLevelsCell&ChartReport=False&ClassSystemValue=NAICS&ProductCode=.TOTAL&NTD=True)).
-- *flow* specifies the direction of trade: *Import* or *Export*.
-- *datadir* specifies the destination directory for the downloaded data (e.g. the [Google Drive data/trade folder](https://drive.google.com/drive/folders/1iql0yrj4TrLKjKyHv9O17KRoQIhyuJP4?usp=sharing)). The data will be saved in both JSON and CSV formats.
-- *cookie* a valid cookie manually generated using the instructions above.
+
 
 ##### Optional parameters:
-
-- *-f filename*
-                filename (without extension) under which to store the downloaded data. The default is <*product\_class*>\_\<*year*\>\_\<*flow*\> (e.g. *SITC_2017_Import.json/csv*)
-- *-p product\_list*
-				file specifying which product categories to download. By default, the script expects a file named \<*datadir*\>/*<product\_class>.txt*. 
-				**NOTE:** The [Google Drive trade folder](https://drive.google.com/drive/folders/1iql0yrj4TrLKjKyHv9O17KRoQIhyuJP4?usp=sharing) contains complete *product_list* files for each taxonomy (e.g. [SITC.txt](https://drive.google.com/file/d/18-VxAKJzB_Eru1lRse84hLijlaDQVqFY/view?usp=sharing)) as well as a small sub-list for testing purposes ([SITC_small.txt](https://drive.google.com/file/d/15R5UqULzlm8gyV7EghzeXOVQLlneRxOQ/view?usp=sharing)). 
+* **-h, --help** - show this help message and exit
+* **-f FILENAME, --filename FILENAME** - filename (without extension) under which to store the downloaded data. The default is <product\_class>\_<year>\_<flow>\_<timestamp> (e.g. SITC_2017_Import_2018_04_13_0000.json/csv)
+* **-v, --verbose**
 
 ##### Example Uses:
 
-* python3 download\_trade\_data.py -f ~/data/trade/SITC\_2017\_Export\_small -p ~/data/trade/SITC\_small.txt SITC 2017 Export ~/data/trade [cookie]
-
-* python3 download\_trade\_data.py SITC 2017 Export ~/data/trade [cookie]
-
-* python3 download\_trade\_data.py help
+* python3 download_trade_data.py ~/data/trade/config/SITC_tiny.txt 2017 Import ~/data/trade/raw [cookie]
 
 ### [In progress] Visualize the data

@@ -4,48 +4,75 @@ from bs4 import BeautifulSoup
 import json
 import csv
 import re 
+import argparse
+import textwrap
 from pprint import pprint
+from datetime import datetime
 
-base_url = "http://tse.export.gov/"
-f_choice_fresh = "choice_fresh.html"
-cookie = "" # Set below, in code
+BASE_URL = "http://tse.export.gov/"
+F_CHOICE_FRESH = "choice_fresh.html" # TODO Explain
+verbose = False
 
-def get_viewstate():
-    # Extract the __VIEWSTATE and __VIEWSTATEGENERATOR
-    with open(f_choice_fresh, "r") as html:
-        soup = BeautifulSoup(html, 'html.parser')
-        viewstate = soup.find(id = "__VIEWSTATE")["value"]
-        generator = soup.find(id = "__VIEWSTATEGENERATOR")["value"]
-    return viewstate, generator
+def download_all_data(products, year, flow, cookie):
+    # Load the website state
+    viewstate, generator = load_viewstate()
+    state = {"cookie": cookie,
+        "viewstate": viewstate, 
+        "generator": generator}
 
-def map_year(year):
-    # Mapping years to internal representation on the http://tse.export.gov/ website.
-    return year - 1348
+    # Load the product list
+    pclass, prods = load_product_list(products)
 
-def to_int(x):
-    return int(x.replace(",", ""))
+    # Download and extract the data
+    data = []
+    log("\nStarting data download..")
+    print("Downloading " + str(len(prods)) + " data pages:")
+    for prod in prods:
+        page = download_product_data(pclass, prod, {"from": year, "to": year}, flow, state)
+        prod_data = extract_product_data(page)
+        data.append({
+            "prod": prod,
+            "values": prod_data
+        })
+    log("Data download and extraction completed.\n")
 
-def get_product_list(fname):
+    # Add the meta-information to the data
+    meta = {
+        "pclass": pclass,
+        "products": products,
+        "year": year,
+        "flow": flow, 
+    }
+
+    return {"meta": meta, "data": data}
+
+def load_product_list(fname): 
+    log("Loading the product list..")
     with open(fname, "r") as f:
         rows = f.readlines()
+    
+    pclass = rows[0].strip()
     prods = []
-    for row in rows:
+    for row in rows[1:]:
         prod = row.strip()
         prod = prod.split(" - ")
         prod = {"code": prod[0], "name": prod[1]}
         prods.append(prod)
-    return prods
 
-def download_product_data(pclass, prod, years, flow):
+    log("Product list loaded.")
+    return pclass, prods
+
+def download_product_data(pclass, prod, years, flow, state):
+    print("Downloading: " + prod["code"] + " - " + prod["name"] + "...")
+
     # Send in the POSTback request — to update the cookie with our choices
     url = "tse/TSEOptions.aspx?ReportID=1&Referrer=TSEReports.aspx&DataSource=NTD"
-    viewstate, generator = get_viewstate()
 
-    headers = {"Cookie": "ASP.NET_SessionId="+cookie, 
-            "Referer": base_url+url}
+    headers = {"Cookie": "ASP.NET_SessionId="+state["cookie"], 
+            "Referer": BASE_URL+url}
     form_data = {
-        "__VIEWSTATE": viewstate,
-        "__VIEWSTATEGENERATOR": generator,
+        "__VIEWSTATE": state["viewstate"],
+        "__VIEWSTATEGENERATOR": state["generator"],
         "ProductOptions1$radioProductFlowType": flow,
         "ProductOptions1$radioDataFlowType": "TotExpGenImp",
         "ProductOptions1$hdnSelectedProductClass": pclass,
@@ -90,23 +117,36 @@ def download_product_data(pclass, prod, years, flow):
         "MapOptions1$MapRanges": "1",
         "btnGo": "Go"
     }
-    requests.post(base_url+url, headers=headers, data=form_data)
+    log("Posting form data..")
+    requests.post(BASE_URL+url, headers=headers, data=form_data)
 
     # Finally, request the MapDisplay page directly, 
     # and check that you got the right data!
     url = "tse/MapDisplay.aspx"
-    headers = {"Cookie": "ASP.NET_SessionId="+cookie}
-    r = requests.get(base_url+url, headers=headers)
+    headers = {"Cookie": "ASP.NET_SessionId="+state["cookie"]}
+    log("Requesting the MapDisplay.aspx page..")
+    r = requests.get(BASE_URL+url, headers=headers)
 
+    if("Detection Screen" in r.text):
+        msg = ("The page was not downloaded correctly "
+            "most likely because of a stale cookie. Please re-generate your cookie "
+            "and try again!")
+        raise RuntimeError(msg)
+
+    log("Product data download completed.")
     return r.text
 
 def extract_product_data(page):
     # NOTE: This function assumes that it was called on a page corresponding to only
     # one year of data. If a page has multiple years, it will only extract the first year.
 
+    log("Extracting data from page..")
     data = []
     soup = BeautifulSoup(page, 'html.parser')
+    log("Finding table rows..")
     rows = soup.find(id = "ScrollableTable1_tblScrollData").find_all("tr")
+
+    log("Table rows found.")
     if len(rows)>0: 
         rows.pop(0); rows.pop(0)    # Remove the table header and the "World" row
         for row in rows:
@@ -117,49 +157,20 @@ def extract_product_data(page):
                 "country": country, 
                 "value": value
             })
+    log("Data extracted successfully.\n")
     return data
-
-def get_all_data(pclass, product_list, year, flow):
-    meta = {
-        "pclass": pclass,
-        "flow": flow, 
-        "year": year,
-        "product_list": product_list
-    }
-
-    # Load the product list
-    prods = get_product_list(product_list)
-
-    # Download and extract the data
-    data = []
-    print("Downloading " + str(len(prods)) + " data pages:")
-    for prod in prods:
-        print("Downloading: " + prod["code"] + " - " + prod["name"] + "...")
-        page = download_product_data(pclass, prod, {"from": year, "to": year}, flow)
-        prod_data = extract_product_data(page)
-        data.append({
-            "prod": prod,
-            "values": prod_data
-        })
-
-    return {"meta": meta, "data": data}
 
 def save_data_as_json(data, fname):
     print("Saving data as JSON at: " + fname)
     with open(fname, "w") as f:
         f.write(json.dumps(data, indent=2))
-
-def get_all_countries(data):
-    all_countries = set()
-    for row in data["data"]:
-        countries = set([entry["country"] for entry in row["values"]])
-        all_countries = all_countries|countries
-    return sorted(list(all_countries))
+    log("JSON file saved.\n")
 
 def reshape_data_for_csv(data):
     # Reshape data to match CSV format: each row is a country, each column is a product
 
-    countries = get_all_countries(data)
+    log("Reshaping data to match CSV format..")
+    countries = extract_all_countries(data)
     rdata = {}
     for country in countries:
         rdata[country] = {}
@@ -167,7 +178,8 @@ def reshape_data_for_csv(data):
         prod = row["prod"]["code"] + " - " + row["prod"]["name"]
         for value in row["values"]:
             rdata[value["country"]][prod] = value["value"]
-    
+    log("Data reshape complete.")
+
     return rdata, countries
 
 def save_data_as_csv(data, fname):
@@ -181,12 +193,42 @@ def save_data_as_csv(data, fname):
             csv_row = rdata[country]
             csv_row["country"] = country
             writer.writerow(csv_row)
+    log("CSV file saved.\n")
 
-        # fieldnames = ["code", "name"] + get_all_countries(data)
-        # writer = csv.DictWriter(f, fieldnames=fieldnames)
-        # writer.writeheader()
-        # for row in data["data"]:
-        #     writer.writerow(to_csv_row(row))
+
+# Helper functions
+
+def log(text):
+    if verbose:
+        print(text)
+
+def load_viewstate():
+    # Extract the __VIEWSTATE and __VIEWSTATEGENERATOR
+    log("Loading __VIEWSTATE and __VIEWSTATEGENERATOR..")
+    with open(F_CHOICE_FRESH, "r") as html:
+        soup = BeautifulSoup(html, 'html.parser')
+        viewstate = soup.find(id = "__VIEWSTATE")["value"]
+        generator = soup.find(id = "__VIEWSTATEGENERATOR")["value"]
+    log("Viewstate loaded.")
+    return viewstate, generator
+
+def map_year(year):
+    # Mapping years to internal representation on the http://tse.export.gov/ website.
+    return year - 1348
+
+def to_int(x):
+    return int(x.replace(",", ""))
+
+def extract_all_countries(data):
+    log("Extracting all countries..")
+    all_countries = set()
+    for row in data["data"]:
+        countries = set([entry["country"] for entry in row["values"]])
+        all_countries = all_countries|countries
+    log("Countries extracted successfully.")
+    return sorted(list(all_countries))
+
+# Test functions
 
 def test_dowload(pclass, prod, years, flow, rows):
     # Download the page
@@ -244,87 +286,59 @@ def test():
     test_extract(page, rows)
 
 if __name__ == "__main__":
+    # Parse arguments from command-line
+    description = """
+        Analyze US trade data from the http://tse.export.gov/ website.
+        For more information see: https://github.com/adona/trade"""
 
-    if(len(sys.argv) == 1 or (len(sys.argv)==2 and sys.argv[1] == "help")):
-        # Show the usage
-        print()
-        print("Analyze US trade data from the http://tse.export.gov/ website.")
-        print("For more information see: https://github.com/adona/trade")
-        print()
-        print("Usage:")
-        print("\tpython3 " + sys.argv[0] + " [-f filename] [-p product_list] product_class year flow datadir cookie")
-        print()
-        print("Required parameters:")
-        print("\tproduct_class - specifies which standard trade products classification system to use: NAICS, HS, or SITC.")
-        print("\tflow - specifies the direction of trade: Import or Export.")
-        print("\tdatadir - specifies the destination directory for the downloaded data. The data will be saved in both JSON and CSV formats." )
-        print("\tcookie - a valid cookie manually generated using the 'preliminary setup' instructions below.")
-        print()
-        print("Optional parameters:")
-        print("\t-f filename - filename (without extension) under which to store the downloaded data. The default is <product_class>_<year>_<flow> (e.g. SITC_2017_Import.json/csv)")
-        print("\t-p product_list - file specifying which product categories to download. By default, the script expects a file named <datadir>/<product_class>.txt.")
-        print()
-        print("Preliminary setup:")
-        print("\t Before running the script, you will need to manually generate a valid cookie:")
-        print("\t\t 1. Begin capturing HTTP traffic using Wireshark or program of choice.")
-        print("\t\t 2. In an incognito window, load http://tse.export.gov/")
-        print("\t\t 3. Navigate to: National Trade Data -> Global Patterns of U.S. Merchandise Trade.")
-        print("\t\t 4. Extract the cookie from the captured HTTP request.")
-        print()
-        print("Example Uses:")
-        print("\tpython3 " + sys.argv[0] + " -f ~/data/trade/SITC_2017_Export_small -p ~/data/trade/SITC_small.txt SITC 2017 Export ~/data/trade [cookie]")
-        print("\tpython3 " + sys.argv[0] + " SITC 2017 Export ~/data/trade [cookie]")
-        print("\tpython3 " + sys.argv[0] + " help")
-        print()
-        print()
-    else: 
-        try: 
-            # Read parameters from command line
-            params = sys.argv[1:]
+    epilog = """
+        Generating a valid cookie
+        -------------------------
+        Before running the script, you will need to manually generate a valid cookie:
+            1. Begin capturing HTTP traffic using Wireshark or program of choice.
+            2. In an incognito window, load http://tse.export.gov/
+            3. Navigate to: National Trade Data -> Global Patterns of U.S. Merchandise Trade.
+            4. Extract the cookie from the captured HTTP request. 
+               The cookie should look something like: 'ASP.NET_SessionId=20pjd3a31dqjh05rytoziouv'.
+               You will only need the part after the =sign: 20pjd3a31dqjh05rytoziouv"""
 
-            filename = ""
-            product_list = ""
-            
-            if(params[0] == "-f"):
-                filename = params[1]
-                params = params[2:]
-            
-            if(params[0] == "-p"):
-                product_list = params[1]
-                params = params[2:]
-            
-            pclass = params[0]
-            year = int(params[1])
-            flow = params[2]
-            datadir = params[3]
-            cookie = params[4]
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description = textwrap.dedent(description),
+        epilog = textwrap.dedent(epilog)
+    )
+    parser.add_argument("products", help = """
+        file specifying: 1) a trade products classification system to use (NAICS, HS, or SITC),and 
+        2) a list of product classes under that system for which to download data.
+        Example files with complete lists of product classes for each classification system 
+        can be found here: https://goo.gl/c9m5H9
+    """)
+    parser.add_argument("year", help = "year to download data for (between 2002-2017)", type = int)
+    parser.add_argument("flow", help = "direction of trade: Import or Export", choices=["Import", "Export"])
+    parser.add_argument("datadir", help = "destination directory for downloaded data")
+    parser.add_argument("-f", "--filename", help = """
+        filename (without extension) under which to store the downloaded data. 
+        The default is <product_class>_<year>_<flow>_<timestamp> 
+        (e.g. SITC_2017_Import_2018_04_13_0000.json/csv)
+    """)
+    parser.add_argument("cookie", help = "a manually-generated valid cookie (see instructions below)")
+    parser.add_argument("-v", "--verbose", action="store_true")
 
-            if(filename == ""):
-                filename = datadir + "/" + pclass + "_" + str(year) + "_" + flow
-            if(product_list == ""):
-                product_list = datadir + "/" + pclass + ".txt"
-        
+    args = parser.parse_args()
+    verbose = args.verbose  # store it in global variable for use by the log function
 
-            # print("Product class: " + pclass)
-            # print("Product list: " + product_list)
-            # print("Year: " + str(year))
-            # print("Flow: " + flow)
-            # print("Datadir: " + datadir)
-            # print("Filename: " + filename + ".json/csv")
-            # print("Cookie: " + cookie)
-            # print()
+    # Download the data
+    data = download_all_data(args.products, args.year, args.flow, args.cookie)
 
-        except: 
-            print("Error parsing your command-line parameters. Please run: " + sys.argv[0] + " help to see the usage.")
-            print()
-            sys.exit()
+    # Save it both as JSON and CSV
+    if not args.filename:
+        args.filename = args.datadir + "/" + data["meta"]["pclass"] + "_" + str(args.year) + "_" + args.flow + "_"
+        args.filename += datetime.utcnow().strftime("%Y_%m_%d_%H%M")
 
-        # Download the data
-        data = get_all_data(pclass, product_list, year, flow)
+    save_data_as_json(data, args.filename + ".json")
+    save_data_as_csv(data, args.filename + ".csv")
 
-        # Save it both as JSON and CSV
-        save_data_as_json(data, filename+".json")
-        save_data_as_csv(data, filename+".csv")
+    log("Data successfully downloaded, extracted, and stored. Goodbye and thanks for all the fish!")
 
 
 
