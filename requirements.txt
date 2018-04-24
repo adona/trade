@@ -1,3 +1,5 @@
 #### Requirements file for the trade project ####
 requests
 bs4
+xlrd
+xlwt
